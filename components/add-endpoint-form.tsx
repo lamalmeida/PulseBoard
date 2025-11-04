@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,18 +25,61 @@ export function AddEndpointForm() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [interval, setInterval] = useState("300"); // 5 minutes default
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  
+  const router = useRouter();
+  const supabase = createClient();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // For now, just log the data to console
-    console.log("Form submitted:", {
-      name,
-      url,
-      interval: parseInt(interval),
-    });
+    setIsLoading(true);
+    setError(null);
+    setSuccess(false);
 
-    // TODO: Step 3 will add Supabase insert here
+    try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to add an endpoint");
+      }
+
+      // Insert the endpoint into Supabase
+      const { data, error: insertError } = await supabase
+        .from("endpoints")
+        .insert({
+          user_id: user.id,
+          name: name.trim(),
+          url: url.trim(),
+          check_interval: parseInt(interval),
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      console.log("✅ Endpoint created:", data);
+
+      // Show success and clear form
+      setSuccess(true);
+      setName("");
+      setUrl("");
+      setInterval("300");
+
+      // Optional: Redirect to endpoints list after 1.5 seconds
+      setTimeout(() => {
+        router.push("/protected/endpoints/add");
+      }, 1500);
+
+    } catch (err: any) {
+      console.error("❌ Error creating endpoint:", err);
+      setError(err.message || "Failed to create endpoint");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -57,6 +102,7 @@ export function AddEndpointForm() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isLoading}
               />
             </div>
 
@@ -69,12 +115,17 @@ export function AddEndpointForm() {
                 required
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                disabled={isLoading}
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="interval">Check Interval</Label>
-              <Select value={interval} onValueChange={setInterval}>
+              <Select 
+                value={interval} 
+                onValueChange={setInterval}
+                disabled={isLoading}
+              >
                 <SelectTrigger id="interval">
                   <SelectValue placeholder="Select interval" />
                 </SelectTrigger>
@@ -87,8 +138,20 @@ export function AddEndpointForm() {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full">
-              Add Endpoint
+            {error && (
+              <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="p-3 rounded-md bg-green-500/10 text-green-600 text-sm">
+                ✅ Endpoint added successfully! Redirecting...
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Adding..." : "Add Endpoint"}
             </Button>
           </div>
         </form>
