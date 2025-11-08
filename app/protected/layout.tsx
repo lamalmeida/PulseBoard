@@ -1,8 +1,5 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
 import Link from "next/link";
 
@@ -19,7 +16,7 @@ export default function ProtectedLayout({
           <div className="flex gap-5 items-center font-semibold">
             <Link href="/protected/endpoints">PulseBoard</Link>
           </div>
-          {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
+            <AuthButton />
         </div>
       </nav>
 
