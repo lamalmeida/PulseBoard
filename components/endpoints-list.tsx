@@ -1,19 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, Loader2, ChevronDown, ChevronRight, TrendingUp, Clock } from "lucide-react";
 import { checkEndpoint } from "@/app/actions/check-endpoint";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import React from "react";
 
 type Endpoint = {
   id: string;
@@ -32,10 +27,57 @@ type EndpointWithStatus = Endpoint & {
   } | null;
 };
 
+type HistoricalCheck = {
+  id: string;
+  status: string;
+  response_time: number;
+  checked_at: string;
+  status_code: number | null;
+};
+
 export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }) {
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [checkResults, setCheckResults] = useState<Record<string, any>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [historicalData, setHistoricalData] = useState<Record<string, HistoricalCheck[]>>({});
+  const [loadingHistory, setLoadingHistory] = useState<string | null>(null);
   const router = useRouter();
+  const supabase = createClient();
+
+  // Fetch historical data for an endpoint
+  const fetchHistoricalData = async (endpointId: string) => {
+    if (historicalData[endpointId]) return; // Already loaded
+
+    setLoadingHistory(endpointId);
+    try {
+      const { data, error } = await supabase
+        .from("checks")
+        .select("id, status, response_time, checked_at, status_code")
+        .eq("endpoint_id", endpointId)
+        .order("checked_at", { ascending: false })
+        .limit(10);
+
+      if (!error && data) {
+        setHistoricalData((prev) => ({
+          ...prev,
+          [endpointId]: data,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching historical data:", error);
+    } finally {
+      setLoadingHistory(null);
+    }
+  };
+
+  const handleRowClick = (endpointId: string) => {
+    if (expandedId === endpointId) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(endpointId);
+      fetchHistoricalData(endpointId);
+    }
+  };
 
   if (endpoints.length === 0) {
     return (
@@ -47,20 +89,18 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
     );
   }
 
-  const handleCheckNow = async (endpointId: string) => {
+  const handleCheckNow = async (endpointId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row expansion
     setCheckingId(endpointId);
 
     try {
       const result = await checkEndpoint(endpointId);
 
       if (result.success && result.check) {
-        // Update local state with the new check result
         setCheckResults((prev) => ({
           ...prev,
           [endpointId]: result.check,
         }));
-
-        // Refresh the page data
         router.refresh();
       } else {
         console.error("Check failed:", result.error);
@@ -90,8 +130,21 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
     });
   };
 
+  const formatRelativeTime = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
   const getStatusBadge = (endpoint: EndpointWithStatus) => {
-    // Check if we have a local check result
     const localCheck = checkResults[endpoint.id];
     const check = localCheck || endpoint.lastCheck;
 
@@ -121,67 +174,191 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
     );
   };
 
-  return (
-    <div className="border rounded-lg">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>URL</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Response Time</TableHead>
-            <TableHead>Interval</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {endpoints.map((endpoint) => {
-            const localCheck = checkResults[endpoint.id];
-            const check = localCheck || endpoint.lastCheck;
-            const isChecking = checkingId === endpoint.id;
+  const calculateUptime = (checks: HistoricalCheck[]) => {
+    if (checks.length === 0) return "N/A";
+    const successCount = checks.filter(c => c.status === "success").length;
+    const percentage = (successCount / checks.length) * 100;
+    return `${percentage.toFixed(1)}%`;
+  };
 
-            return (
-              <TableRow key={endpoint.id}>
-                <TableCell className="font-medium">{endpoint.name}</TableCell>
-                <TableCell className="text-muted-foreground max-w-md truncate">
-                  {endpoint.url}
-                </TableCell>
-                <TableCell>{getStatusBadge(endpoint)}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {check?.response_time ? `${check.response_time}ms` : "-"}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatInterval(endpoint.check_interval)}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatDate(endpoint.created_at)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleCheckNow(endpoint.id)}
-                    disabled={isChecking}
+  const calculateAvgResponseTime = (checks: HistoricalCheck[]) => {
+    if (checks.length === 0) return "N/A";
+    const successChecks = checks.filter(c => c.status === "success");
+    if (successChecks.length === 0) return "N/A";
+    const avg = successChecks.reduce((sum, c) => sum + c.response_time, 0) / successChecks.length;
+    return `${Math.round(avg)}ms`;
+  };
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          {/* ... (thead remains the same) ... */}
+          <tbody>
+            {endpoints.map((endpoint) => {
+              const localCheck = checkResults[endpoint.id];
+              const check = localCheck || endpoint.lastCheck;
+              const isChecking = checkingId === endpoint.id;
+              const isExpanded = expandedId === endpoint.id;
+              const history = historicalData[endpoint.id] || [];
+              const isLoadingHistory = loadingHistory === endpoint.id;
+
+              return (
+                <React.Fragment key={endpoint.id}>
+                  {/*
+                    FIX: The key={endpoint.id} has been moved from the <tr>
+                    to the <React.Fragment> tag above. This is now the
+                    top-level element in the map loop, satisfying React's key requirement.
+                  */}
+                  <tr
+                    className="border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                    onClick={() => handleRowClick(endpoint.id)}
                   >
-                    {isChecking ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Checking...
-                      </>
-                    ) : (
-                      <>
-                        <Activity className="mr-2 h-4 w-4" />
-                        Check Now
-                      </>
-                    )}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                    <td className="p-2 align-middle">
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </td>
+                    <td className="p-2 align-middle font-medium">{endpoint.name}</td>
+                    <td className="p-2 align-middle text-muted-foreground max-w-md truncate">
+                      {endpoint.url}
+                    </td>
+                    <td className="p-2 align-middle">{getStatusBadge(endpoint)}</td>
+                    <td className="p-2 align-middle text-muted-foreground">
+                      {check?.response_time ? `${check.response_time}ms` : "-"}
+                    </td>
+                    <td className="p-2 align-middle text-muted-foreground">
+                      {formatInterval(endpoint.check_interval)}
+                    </td>
+                    <td className="p-2 align-middle text-muted-foreground">
+                      {formatDate(endpoint.created_at)}
+                    </td>
+                    <td className="p-2 align-middle text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleCheckNow(endpoint.id, e)}
+                        disabled={isChecking}
+                      >
+                        {isChecking ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Checking...
+                          </>
+                        ) : (
+                          <>
+                            <Activity className="mr-2 h-4 w-4" />
+                            Check Now
+                          </>
+                        )}
+                      </Button>
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    /*
+                      FIX: Added a unique key to the conditional expanded row
+                      to differentiate it from its sibling <tr>.
+                    */
+                    <tr key={`${endpoint.id}-expanded`}>
+                      <td colSpan={8} className="bg-muted/30 p-6">
+                        {isLoadingHistory ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                            <span className="ml-2 text-muted-foreground">Loading history...</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-6">
+                            {/* Stats Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="border rounded-lg p-4 bg-background">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                  <TrendingUp className="h-4 w-4" />
+                                  Uptime (Last 10 checks)
+                                </div>
+                                <div className="text-2xl font-bold">{calculateUptime(history)}</div>
+                              </div>
+                              <div className="border rounded-lg p-4 bg-background">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                  <Clock className="h-4 w-4" />
+                                  Avg Response Time
+                                </div>
+                                <div className="text-2xl font-bold">{calculateAvgResponseTime(history)}</div>
+                              </div>
+                              <div className="border rounded-lg p-4 bg-background">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                  <Activity className="h-4 w-4" />
+                                  Total Checks
+                                </div>
+                                <div className="text-2xl font-bold">{history.length}</div>
+                              </div>
+                            </div>
+
+                            {/* Recent History */}
+                            <div>
+                              <h3 className="text-sm font-semibold mb-3">Recent Check History</h3>
+                              <div className="space-y-2">
+                                {history.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground text-center py-4">
+                                    No check history available yet
+                                  </p>
+                                ) : (
+                                  history.slice(0, 5).map((historyCheck) => (
+                                    <div
+                                      key={historyCheck.id}
+                                      className="flex items-center justify-between p-3 border rounded-lg bg-background"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <Badge
+                                          variant="secondary"
+                                          className={
+                                            historyCheck.status === "success"
+                                              ? "bg-green-500/10 text-green-600 border-green-500/20"
+                                              : "bg-red-500/10 text-red-600 border-red-500/20"
+                                          }
+                                        >
+                                          {historyCheck.status === "success" ? "Online" : "Offline"}
+                                        </Badge>
+                                        <span className="text-sm text-muted-foreground">
+                                          {formatRelativeTime(historyCheck.checked_at)}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-sm">
+                                        {historyCheck.status === "success" && (
+                                          <span className="text-muted-foreground">
+                                            {historyCheck.response_time}ms
+                                          </span>
+                                        )}
+                                        {historyCheck.status_code && (
+                                          <Badge variant="outline">{historyCheck.status_code}</Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+
+                            {/* See More Button */}
+                            <div className="flex justify-center pt-2">
+                              <Button asChild variant="outline">
+                                <Link href={`/protected/endpoints/${endpoint.id}`}>
+                                  See Full Details & History
+                                </Link>
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
