@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-
 import { createClient } from "@/lib/supabase/server";
 import { InfoIcon } from "lucide-react";
 import { FetchDataSteps } from "@/components/tutorial/fetch-data-steps";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function ProtectedPage() {
   const supabase = await createClient();
@@ -21,6 +22,19 @@ export default async function ProtectedPage() {
           user
         </div>
       </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="font-bold text-2xl">Quick Actions</h2>
+        <div className="flex gap-4">
+          <Button asChild>
+            <Link href="/protected/endpoints">View Endpoints</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/protected/endpoints/add">Add New Endpoint</Link>
+          </Button>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-2 items-start">
         <h2 className="font-bold text-2xl mb-4">Your user details</h2>
         <pre className="text-xs font-mono p-3 rounded border max-h-32 overflow-auto">
