@@ -14,15 +14,38 @@ export default async function EndpointsPage() {
     redirect("/auth/login");
   }
 
-  // Fetch user's endpoints
+  // Fetch user's endpoints with their last check
   const { data: endpoints, error: fetchError } = await supabase
     .from("endpoints")
-    .select("*")
+    .select(`
+      *,
+      checks:checks(
+        status,
+        response_time,
+        checked_at
+      )
+    `)
     .order("created_at", { ascending: false });
 
   if (fetchError) {
     console.error("Error fetching endpoints:", fetchError);
   }
+
+  // Transform the data to get only the last check for each endpoint
+  const endpointsWithLastCheck = endpoints?.map((endpoint: any) => {
+    const checks = endpoint.checks || [];
+    const lastCheck = checks.length > 0 
+      ? checks.sort((a: any, b: any) => 
+          new Date(b.checked_at).getTime() - new Date(a.checked_at).getTime()
+        )[0]
+      : null;
+
+    return {
+      ...endpoint,
+      lastCheck,
+      checks: undefined, // Remove the checks array from the object
+    };
+  });
 
   return (
     <div className="flex-1 w-full flex flex-col gap-12">
@@ -41,7 +64,7 @@ export default async function EndpointsPage() {
         </Button>
       </div>
 
-      <EndpointsList endpoints={endpoints || []} />
+      <EndpointsList endpoints={endpointsWithLastCheck || []} />
     </div>
   );
 }
