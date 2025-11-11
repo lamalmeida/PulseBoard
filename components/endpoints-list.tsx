@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, Loader2, ChevronDown, ChevronRight, TrendingUp, Clock } from "lucide-react";
+import {
+  Activity,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  TrendingUp,
+  Clock,
+} from "lucide-react";
 import { checkEndpoint } from "@/app/actions/check-endpoint";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -35,17 +42,24 @@ type HistoricalCheck = {
   status_code: number | null;
 };
 
-export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }) {
+export function EndpointsList({
+  endpoints,
+}: {
+  endpoints: EndpointWithStatus[];
+}) {
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [checkResults, setCheckResults] = useState<Record<string, any>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [historicalData, setHistoricalData] = useState<Record<string, HistoricalCheck[]>>({});
+  const [historicalData, setHistoricalData] = useState<
+    Record<string, HistoricalCheck[]>
+  >({});
   const [loadingHistory, setLoadingHistory] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   // Fetch historical data for an endpoint
   const fetchHistoricalData = async (endpointId: string) => {
+    if (!endpointId || endpointId === "undefined") return;
     if (historicalData[endpointId]) return; // Already loaded
 
     setLoadingHistory(endpointId);
@@ -71,6 +85,8 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
   };
 
   const handleRowClick = (endpointId: string) => {
+    if (!endpointId || endpointId === "undefined") return;
+
     if (expandedId === endpointId) {
       setExpandedId(null);
     } else {
@@ -89,10 +105,17 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
     );
   }
 
-  const handleCheckNow = async (endpointId: string, e: React.MouseEvent) => {
+  const handleCheckNow = async (
+    endpointId: string,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation(); // Prevent row expansion
-    setCheckingId(endpointId);
+    if (!endpointId || endpointId === "undefined") {
+      alert("Invalid endpoint ID.");
+      return;
+    }
 
+    setCheckingId(endpointId);
     try {
       const result = await checkEndpoint(endpointId);
 
@@ -159,7 +182,10 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
 
     if (check.status === "success") {
       return (
-        <Badge variant="secondary" className="gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+        <Badge
+          variant="secondary"
+          className="gap-1 bg-green-500/10 text-green-600 border-green-500/20"
+        >
           <span className="h-2 w-2 rounded-full bg-green-500" />
           Online
         </Badge>
@@ -167,7 +193,10 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
     }
 
     return (
-      <Badge variant="secondary" className="gap-1 bg-red-500/10 text-red-600 border-red-500/20">
+      <Badge
+        variant="secondary"
+        className="gap-1 bg-red-500/10 text-red-600 border-red-500/20"
+      >
         <span className="h-2 w-2 rounded-full bg-red-500" />
         Offline
       </Badge>
@@ -176,16 +205,18 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
 
   const calculateUptime = (checks: HistoricalCheck[]) => {
     if (checks.length === 0) return "N/A";
-    const successCount = checks.filter(c => c.status === "success").length;
+    const successCount = checks.filter((c) => c.status === "success").length;
     const percentage = (successCount / checks.length) * 100;
     return `${percentage.toFixed(1)}%`;
   };
 
   const calculateAvgResponseTime = (checks: HistoricalCheck[]) => {
     if (checks.length === 0) return "N/A";
-    const successChecks = checks.filter(c => c.status === "success");
+    const successChecks = checks.filter((c) => c.status === "success");
     if (successChecks.length === 0) return "N/A";
-    const avg = successChecks.reduce((sum, c) => sum + c.response_time, 0) / successChecks.length;
+    const avg =
+      successChecks.reduce((sum, c) => sum + c.response_time, 0) /
+      successChecks.length;
     return `${Math.round(avg)}ms`;
   };
 
@@ -193,9 +224,10 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
     <div className="border rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          {/* ... (thead remains the same) ... */}
           <tbody>
             {endpoints.map((endpoint) => {
+              if (!endpoint?.id || endpoint.id === "undefined") return null;
+
               const localCheck = checkResults[endpoint.id];
               const check = localCheck || endpoint.lastCheck;
               const isChecking = checkingId === endpoint.id;
@@ -205,11 +237,6 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
 
               return (
                 <React.Fragment key={endpoint.id}>
-                  {/*
-                    FIX: The key={endpoint.id} has been moved from the <tr>
-                    to the <React.Fragment> tag above. This is now the
-                    top-level element in the map loop, satisfying React's key requirement.
-                  */}
                   <tr
                     className="border-b hover:bg-muted/30 cursor-pointer transition-colors"
                     onClick={() => handleRowClick(endpoint.id)}
@@ -221,11 +248,15 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                     </td>
-                    <td className="p-2 align-middle font-medium">{endpoint.name}</td>
+                    <td className="p-2 align-middle font-medium">
+                      {endpoint.name}
+                    </td>
                     <td className="p-2 align-middle text-muted-foreground max-w-md truncate">
                       {endpoint.url}
                     </td>
-                    <td className="p-2 align-middle">{getStatusBadge(endpoint)}</td>
+                    <td className="p-2 align-middle">
+                      {getStatusBadge(endpoint)}
+                    </td>
                     <td className="p-2 align-middle text-muted-foreground">
                       {check?.response_time ? `${check.response_time}ms` : "-"}
                     </td>
@@ -257,96 +288,118 @@ export function EndpointsList({ endpoints }: { endpoints: EndpointWithStatus[] }
                     </td>
                   </tr>
                   {isExpanded && (
-                    /*
-                      FIX: Added a unique key to the conditional expanded row
-                      to differentiate it from its sibling <tr>.
-                    */
                     <tr key={`${endpoint.id}-expanded`}>
                       <td colSpan={8} className="bg-muted/30 p-6">
                         {isLoadingHistory ? (
                           <div className="flex items-center justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                            <span className="ml-2 text-muted-foreground">Loading history...</span>
+                            <span className="ml-2 text-muted-foreground">
+                              Loading history...
+                            </span>
                           </div>
                         ) : (
                           <div className="space-y-6">
-                            {/* Stats Summary */}
+                            {/* Stats */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div className="border rounded-lg p-4 bg-background">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                                   <TrendingUp className="h-4 w-4" />
                                   Uptime (Last 10 checks)
                                 </div>
-                                <div className="text-2xl font-bold">{calculateUptime(history)}</div>
+                                <div className="text-2xl font-bold">
+                                  {calculateUptime(history)}
+                                </div>
                               </div>
                               <div className="border rounded-lg p-4 bg-background">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                                   <Clock className="h-4 w-4" />
                                   Avg Response Time
                                 </div>
-                                <div className="text-2xl font-bold">{calculateAvgResponseTime(history)}</div>
+                                <div className="text-2xl font-bold">
+                                  {calculateAvgResponseTime(history)}
+                                </div>
                               </div>
                               <div className="border rounded-lg p-4 bg-background">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                                   <Activity className="h-4 w-4" />
                                   Total Checks
                                 </div>
-                                <div className="text-2xl font-bold">{history.length}</div>
+                                <div className="text-2xl font-bold">
+                                  {history.length}
+                                </div>
                               </div>
                             </div>
 
-                            {/* Recent History */}
+                            {/* History */}
                             <div>
-                              <h3 className="text-sm font-semibold mb-3">Recent Check History</h3>
+                              <h3 className="text-sm font-semibold mb-3">
+                                Recent Check History
+                              </h3>
                               <div className="space-y-2">
                                 {history.length === 0 ? (
                                   <p className="text-sm text-muted-foreground text-center py-4">
                                     No check history available yet
                                   </p>
                                 ) : (
-                                  history.slice(0, 5).map((historyCheck) => (
-                                    <div
-                                      key={historyCheck.id}
-                                      className="flex items-center justify-between p-3 border rounded-lg bg-background"
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <Badge
-                                          variant="secondary"
-                                          className={
-                                            historyCheck.status === "success"
-                                              ? "bg-green-500/10 text-green-600 border-green-500/20"
-                                              : "bg-red-500/10 text-red-600 border-red-500/20"
-                                          }
-                                        >
-                                          {historyCheck.status === "success" ? "Online" : "Offline"}
-                                        </Badge>
-                                        <span className="text-sm text-muted-foreground">
-                                          {formatRelativeTime(historyCheck.checked_at)}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-4 text-sm">
-                                        {historyCheck.status === "success" && (
-                                          <span className="text-muted-foreground">
-                                            {historyCheck.response_time}ms
+                                  history
+                                    .slice(0, 5)
+                                    .map((historyCheck) => (
+                                      <div
+                                        key={historyCheck.id}
+                                        className="flex items-center justify-between p-3 border rounded-lg bg-background"
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <Badge
+                                            variant="secondary"
+                                            className={
+                                              historyCheck.status === "success"
+                                                ? "bg-green-500/10 text-green-600 border-green-500/20"
+                                                : "bg-red-500/10 text-red-600 border-red-500/20"
+                                            }
+                                          >
+                                            {historyCheck.status === "success"
+                                              ? "Online"
+                                              : "Offline"}
+                                          </Badge>
+                                          <span className="text-sm text-muted-foreground">
+                                            {formatRelativeTime(
+                                              historyCheck.checked_at
+                                            )}
                                           </span>
-                                        )}
-                                        {historyCheck.status_code && (
-                                          <Badge variant="outline">{historyCheck.status_code}</Badge>
-                                        )}
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm">
+                                          {historyCheck.status === "success" && (
+                                            <span className="text-muted-foreground">
+                                              {historyCheck.response_time}ms
+                                            </span>
+                                          )}
+                                          {historyCheck.status_code && (
+                                            <Badge variant="outline">
+                                              {historyCheck.status_code}
+                                            </Badge>
+                                          )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))
+                                    ))
                                 )}
                               </div>
                             </div>
 
                             {/* See More Button */}
                             <div className="flex justify-center pt-2">
-                              <Button asChild variant="outline">
-                                <Link href={`/protected/endpoints/${endpoint.id}`}>
-                                  See Full Details & History
-                                </Link>
-                              </Button>
+                              {endpoint?.id && endpoint.id !== "undefined" ? (
+                                <Button asChild variant="outline">
+                                  <Link
+                                    href={`/protected/endpoints/${endpoint.id}`}
+                                  >
+                                    See Full Details & History
+                                  </Link>
+                                </Button>
+                              ) : (
+                                <Button variant="outline" disabled>
+                                  Invalid Endpoint
+                                </Button>
+                              )}
                             </div>
                           </div>
                         )}
