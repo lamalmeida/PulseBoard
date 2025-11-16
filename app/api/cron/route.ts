@@ -1,13 +1,37 @@
-import { verifySignature } from "@upstash/qstash/nextjs";
-import { createClient } from "@/lib/supabase/server";
+import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { checkEndpoint } from "@/app/actions/check-endpoint";
 
 async function handler() {
   try {
     console.log("🔄 Cron job triggered at:", new Date().toISOString());
+    
+    // Log environment info (without sensitive data)
+    console.log('Environment:', {
+      nodeEnv: process.env.NODE_ENV,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set',
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Not set',
+    });
 
     // Create Supabase server client
-    const supabase = await createClient();
+    console.log('Creating Supabase admin client...');
+    const supabase = await createAdminClient();
+    
+    // Test database connection
+    console.log('Testing database connection...');
+    const { data: testData, error: testError } = await supabase
+      .from('endpoints')
+      .select('count')
+      .limit(1);
+      
+    if (testError) {
+      console.error('❌ Database connection test failed:', testError);
+      return Response.json(
+        { error: `Database connection failed: ${testError.message}` },
+        { status: 500 }
+      );
+    }
+    console.log('✅ Database connection successful');
 
     // Fetch all active endpoints
     const { data: endpoints, error: endpointsError } = await supabase
@@ -139,14 +163,17 @@ async function handler() {
   }
 }
 
-// Wrap handler with QStash signature verification
-export const POST = verifySignature(handler);
-
 // For local testing (bypasses signature verification)
 export async function GET() {
   if (process.env.NODE_ENV !== "development") {
     return Response.json({ error: "Not allowed" }, { status: 403 });
   }
-
+  
+  // In development, bypass authentication for GET requests
   return handler();
 }
+
+// For production, use the authenticated POST endpoint
+export const POST = process.env.NODE_ENV === "development" 
+  ? handler 
+  : verifySignatureAppRouter(handler);

@@ -1,9 +1,10 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function checkEndpoint(endpointId: string) {
-  const supabase = await createClient();
+  console.log(`🔍 Starting check for endpoint: ${endpointId}`);
+  const supabase = await createAdminClient();
 
   try {
     // Get the endpoint details
@@ -14,8 +15,11 @@ export async function checkEndpoint(endpointId: string) {
       .single();
 
     if (fetchError || !endpoint) {
-      throw new Error("Endpoint not found");
+      console.error(`❌ Endpoint not found: ${endpointId}`, fetchError);
+      throw new Error(`Endpoint not found: ${endpointId}`);
     }
+    
+    console.log(`🔗 Checking endpoint: ${endpoint.name} (${endpoint.url})`);
 
     // Perform the health check
     const startTime = Date.now();
@@ -71,18 +75,23 @@ export async function checkEndpoint(endpointId: string) {
       .single();
 
     if (insertError) {
+      console.error('❌ Failed to insert check result:', insertError);
       throw insertError;
     }
+    
+    console.log(`✅ Check completed for ${endpoint.name}: ${status} (${responseTime}ms)`);
 
     return {
       success: true,
       check,
     };
   } catch (error: any) {
-    console.error("Error checking endpoint:", error);
+    console.error(`❌ Error checking endpoint ${endpointId}:`, error);
     return {
       success: false,
       error: error.message || "Failed to check endpoint",
+      details: error.details || null,
+      code: error.code || 'UNKNOWN_ERROR'
     };
   }
 }

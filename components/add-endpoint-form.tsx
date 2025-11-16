@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { updateQStashSchedule } from "@/app/actions/update-qstash-schedule";
 
 export function AddEndpointForm() {
   const [name, setName] = useState("");
@@ -63,6 +64,8 @@ export function AddEndpointForm() {
 
       console.log("✅ Endpoint created:", data);
 
+      await updateQStashSchedule();
+
       // Show success and clear form
       setSuccess(true);
       setName("");
@@ -71,7 +74,7 @@ export function AddEndpointForm() {
 
       // Optional: Redirect to endpoints list after 1.5 seconds
       setTimeout(() => {
-        router.push("/protected/endpoints/add");
+        router.push("/protected/endpoints");
       }, 1500);
 
     } catch (err: any) {
