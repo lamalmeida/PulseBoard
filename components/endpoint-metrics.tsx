@@ -1,6 +1,8 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { Line } from "react-chartjs-2";
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,6 +12,8 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions,
+  ChartData,
 } from "chart.js";
 
 ChartJS.register(
@@ -31,170 +35,177 @@ type Check = {
 };
 
 export function EndpointMetrics({ checks }: { checks: Check[] }) {
-  // Get last 24 hours of data, or all data if less than 24 data points
-  const recentChecks = checks
-    .sort((a, b) => new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime())
-    .slice(-24); // Last 24 checks
+  const { theme } = useTheme();
+  const [chartColors, setChartColors] = useState({
+    primary: "rgb(0, 0, 0)",
+    background: "rgb(255, 255, 255)", // Added to create the 'halo' effect
+    border: "rgb(200, 200, 200)",
+    popover: "rgb(255, 255, 255)",
+    popoverForeground: "rgb(0, 0, 0)",
+    mutedForeground: "rgb(100, 100, 100)",
+    muted: "rgb(240, 240, 240)",
+  });
 
-  const chartData = {
-    labels: recentChecks.map(check => 
-        new Date(check.checked_at).toLocaleTimeString()
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const root = document.documentElement;
+      const computedStyle = getComputedStyle(root);
+
+      const getColor = (varName: string) => {
+        const value = computedStyle.getPropertyValue(varName).trim();
+        if (!value) return "";
+        return `hsl(${value.replaceAll(" ", ",")})`;
+      };
+
+      setChartColors({
+        primary: getColor("--primary"),
+        background: getColor("--background"), // Fetches the card/page background color
+        border: getColor("--border"),
+        popover: getColor("--popover"),
+        popoverForeground: getColor("--popover-foreground"),
+        mutedForeground: getColor("--muted-foreground"),
+        muted: getColor("--muted"),
+      });
+    }, 10);
+
+    return () => clearTimeout(timer);
+  }, [theme]);
+
+  const recentChecks = checks
+    .sort(
+      (a, b) =>
+        new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime()
+    )
+    .slice(-24);
+
+  const chartData: ChartData<"line"> = {
+    labels: recentChecks.map((check) =>
+      new Date(check.checked_at).toLocaleTimeString()
     ),
     datasets: [
-        {
+      {
         label: "Response Time (ms)",
-        data: recentChecks.map(check => check.response_time),
-        borderColor: "hsl(var(--primary))", // Use primary color from theme
-        backgroundColor: "hsl(var(--primary) / 0.1)", // Semi-transparent primary
+        data: recentChecks.map((check) => check.response_time),
+        borderColor: chartColors.primary,
+        // Made solid to hide the line behind
+        backgroundColor: chartColors.primary,
+        pointBackgroundColor: chartColors.primary,
+        // Adds a small background-colored border to the dot for contrast
+        pointBorderColor: chartColors.background,
+        pointBorderWidth: 2,
         borderWidth: 2,
         tension: 0.4,
+        pointRadius: 6,
+        pointHoverRadius: 8,
         yAxisID: "y",
-        },
-        {
+        borderDash: [5, 5],
+      },
+      {
         label: "Status",
-        data: recentChecks.map(check => check.status === "success" ? 1 : 0),
-        borderColor: "hsl(142.1, 70.6%, 45.3%)",  // Success color
-        backgroundColor: "hsl(142.1, 70.6%, 45.3% / 0.2)",
+        data: recentChecks.map((check) => (check.status === "success" ? 1 : 0)),
+        borderColor: "hsl(142.1, 70.6%, 45.3%)",
+        // Made solid green
+        backgroundColor: "hsl(142.1, 70.6%, 45.3%)",
+        pointBackgroundColor: "hsl(142.1, 70.6%, 45.3%)",
+        pointBorderColor: chartColors.background,
+        pointBorderWidth: 2,
         borderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointRadius: 6,
+        pointHoverRadius: 8,
         yAxisID: "y1",
-        borderDash: [5, 5],  // Make the status line dashed
-        },
+        borderDash: [5, 5],
+      },
     ],
-    };
+  };
 
-  const options = {
+  const options: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
-        mode: "index" as const,
-        intersect: false,
+      mode: "index",
+      intersect: false,
     },
     scales: {
-        x: {
+      x: {
         grid: {
-            color: "hsl(var(--border))",
+          color: chartColors.border,
         },
         ticks: {
-            color: "hsl(var(--muted-foreground))",
+          color: chartColors.mutedForeground,
         },
-        },
-        y: {
-        type: "linear" as const,
+      },
+      y: {
+        type: "linear",
         display: true,
-        position: "left" as const,
+        position: "left",
         grid: {
-            color: "hsl(var(--border))",
+          color: chartColors.border,
         },
         ticks: {
-            color: "hsl(var(--muted-foreground))",
+          color: chartColors.mutedForeground,
         },
-        },
-        y1: {
-        type: "linear" as const,
+      },
+      y1: {
+        type: "linear",
         display: true,
-        position: "right" as const,
+        position: "right",
         min: 0,
-        max: 1,
+        max: 1.1, // Buffer to prevent cutoff
         grid: {
-            drawOnChartArea: false,
+          drawOnChartArea: false,
         },
         ticks: {
-            stepSize: 1,
-            color: "hsl(var(--muted-foreground))",
-            callback: (value: number) => (value === 1 ? "Up" : "Down"),
+          stepSize: 1,
+          color: chartColors.mutedForeground,
+          callback: (value) => (value === 1 ? "Up" : "Down"),
         },
-        },
+      },
     },
     plugins: {
-        legend: {
+      legend: {
         labels: {
-            color: "hsl(var(--foreground))",
-            padding: 20,
+          color: chartColors.popoverForeground,
+          padding: 20,
         },
-        },
-        tooltip: {
-        backgroundColor: "hsl(var(--popover))",
-        titleColor: "hsl(var(--popover-foreground))",
-        bodyColor: "hsl(var(--popover-foreground))",
-        borderColor: "hsl(var(--border))",
+      },
+      tooltip: {
+        backgroundColor: chartColors.popover,
+        titleColor: chartColors.popoverForeground,
+        bodyColor: chartColors.popoverForeground,
+        borderColor: chartColors.border,
         borderWidth: 1,
         padding: 12,
         callbacks: {
-            label: (context: any) => {
-            const label = context.dataset.label || '';
+          label: (context) => {
+            const label = context.dataset.label || "";
             const value = context.parsed.y;
             if (context.datasetIndex === 0) {
-                return `${label}: ${value}ms`;
+              return `${label}: ${value}ms`;
             }
-            return `${label}: ${value === 1 ? 'Up' : 'Down'}`;
-            },
-            afterBody: (context: any) => {
+            return `${label}: ${value === 1 ? "Up" : "Down"}`;
+          },
+          afterBody: (context) => {
             const index = context[0].dataIndex;
             const check = recentChecks[index];
             return [
-                `Status: ${check.status.toUpperCase()}`,
-                `Status Code: ${check.status_code || "N/A"}`,
-                `Time: ${new Date(check.checked_at).toLocaleString()}`,
+              `Status: ${check.status.toUpperCase()}`,
+              `Status Code: ${check.status_code || "N/A"}`,
+              `Time: ${new Date(check.checked_at).toLocaleString()}`,
             ];
-            },
+          },
         },
-        },
+      },
     },
-    };
+  };
 
   return (
     <div className="p-6 bg-card rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-4 text-foreground">Performance Metrics</h2>
-        <div className="h-80">
-        <Line 
-            options={{
-            ...options,
-            plugins: {
-                ...options.plugins,
-                legend: {
-                labels: {
-                    color: 'hsl(var(--foreground))',
-                }
-                }
-            },
-            scales: {
-                ...options.scales,
-                x: {
-                ...options.scales.x,
-                ticks: {
-                    color: 'hsl(var(--muted-foreground))',
-                },
-                grid: {
-                    color: 'hsl(var(--muted))',
-                }
-                },
-                y: {
-                ...options.scales.y,
-                ticks: {
-                    color: 'hsl(var(--muted-foreground))',
-                },
-                grid: {
-                    color: 'hsl(var(--muted))',
-                }
-                },
-                y1: {
-                ...options.scales.y1,
-                ticks: {
-                    color: 'hsl(var(--muted-foreground))',
-                    stepSize: 1,
-                    callback: (value: string | number) => {
-                        const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                        return numValue === 1 ? "Up" : "Down";
-                    }
-                }
-                }
-            }
-            }} 
-            data={chartData} 
-        />
-        </div>
+      <h2 className="text-lg font-semibold mb-4 text-foreground">
+        Performance Metrics
+      </h2>
+      <div className="h-80">
+        <Line key={theme} data={chartData} options={options} />
+      </div>
     </div>
-    );
+  );
 }
