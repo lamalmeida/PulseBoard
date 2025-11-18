@@ -6,7 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// import { EndpointHistoryTable } from "@/components/endpoint-history-table";
+import { EndpointHistoryTable } from "@/components/endpoint-history";
+import { EndpointMetrics } from "@/components/endpoint-metrics";
 import { Clock, Globe, ShieldAlert, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -93,7 +94,7 @@ export default async function EndpointDetailPage({
   const stats = calculateStats(checks || []);
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-12">
+    <div className="flex-1 w-full flex flex-col gap-8">
       {/* Header */}
       <div>
         <Button asChild variant="outline" size="sm" className="mb-4 gap-2">
@@ -151,8 +152,14 @@ export default async function EndpointDetailPage({
         </Card>
       </div>
 
+      {/* Metrics Graph */}
+      <EndpointMetrics checks={checks || []} />
+
       {/* Full History Table */}
-      {/* <EndpointHistoryTable checks={checks || []} /> */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Check History</h2>
+        <EndpointHistoryTable checks={checks || []} />
+      </div>
     </div>
   );
 }
