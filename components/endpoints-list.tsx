@@ -399,7 +399,7 @@ export function EndpointsList({
                                 check_interval: endpoint.check_interval,
                               }}
                               trigger={
-                                <DropdownMenuItem className="gap-2">
+                                <DropdownMenuItem className="gap-2" onSelect={(e) => e.preventDefault()}>
                                   <Pencil className="h-4 w-4" />
                                   Edit endpoint
                                 </DropdownMenuItem>
