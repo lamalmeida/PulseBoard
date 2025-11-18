@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendFailureNotification } from "@/app/actions/send-failure-notification";
 
 export async function checkEndpoint(endpointId: string) {
   console.log(`🔍 Starting check for endpoint: ${endpointId}`);
@@ -20,6 +21,17 @@ export async function checkEndpoint(endpointId: string) {
     }
     
     console.log(`🔗 Checking endpoint: ${endpoint.name} (${endpoint.url})`);
+
+    // Get the previous check status to detect first failure
+    const { data: previousCheck } = await supabase
+      .from("checks")
+      .select("status")
+      .eq("endpoint_id", endpointId)
+      .order("checked_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    const previousStatus = previousCheck?.status;
 
     // Perform the health check
     const startTime = Date.now();
@@ -80,6 +92,41 @@ export async function checkEndpoint(endpointId: string) {
     }
     
     console.log(`✅ Check completed for ${endpoint.name}: ${status} (${responseTime}ms)`);
+
+    // Send notification if this is the first failure (status changed from success to failure)
+    if (status === "failure"){//&& previousStatus === "success") {
+      console.log(`🚨 First failure detected for ${endpoint.name}, sending notification...`);
+      
+      // Get the user's email from auth.users
+      const { data: userData } = await supabase.auth.admin.getUserById(
+        endpoint.user_id
+      );
+
+      if (userData?.user?.email) {
+        const notificationResult = await sendFailureNotification(
+          endpointId,
+          endpoint.name,
+          endpoint.url,
+          errorMessage || "Unknown error",
+          userData.user.email
+        );
+
+        if (notificationResult.success && notificationResult.emailSent) {
+          console.log(`📧 Notification sent to ${userData.user.email}`);
+        } else if (notificationResult.emailSent === false) {
+          console.log(`⏭️ ${notificationResult.message}`);
+        } else {
+          console.error(`❌ Failed to send notification: ${notificationResult.message}`);
+        }
+      } else {
+        console.error(`❌ No email found for user ${endpoint.user_id}`);
+      }
+    } else if (status === "failure" && previousStatus === "failure") {
+      console.log(`⚠️ Endpoint still down, but notification cooldown active`);
+    } else if (status === "success" && previousStatus === "failure") {
+      console.log(`✅ Endpoint recovered!`);
+      // Optional: You could send a recovery notification here
+    }
 
     return {
       success: true,
