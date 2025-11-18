@@ -4,18 +4,35 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Activity,
   Loader2,
   ChevronDown,
   ChevronRight,
   TrendingUp,
   Clock,
+  MoreVertical,
+  Pause,
+  Play,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { checkEndpoint } from "@/app/actions/check-endpoint";
+import {
+  deleteEndpoint,
+  toggleEndpointStatus,
+} from "@/app/actions/endpoint-actions";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import React from "react";
+import { EditEndpointDialog } from "@/components/edit-endpoint-dialog";
 
 type Endpoint = {
   id: string;
@@ -54,6 +71,9 @@ export function EndpointsList({
     Record<string, HistoricalCheck[]>
   >({});
   const [loadingHistory, setLoadingHistory] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<
+    Record<string, "toggle" | "delete" | undefined>
+  >({});
   const router = useRouter();
   const supabase = createClient();
 
@@ -81,6 +101,73 @@ export function EndpointsList({
       console.error("Error fetching historical data:", error);
     } finally {
       setLoadingHistory(null);
+    }
+  };
+
+  const handleToggleEndpoint = async (endpointId: string) => {
+    if (!endpointId || endpointId === "undefined") {
+      alert("Invalid endpoint ID.");
+      return;
+    }
+
+    setActionLoading((prev) => ({ ...prev, [endpointId]: "toggle" }));
+    try {
+      const result = await toggleEndpointStatus(endpointId);
+
+      if (!result.success) {
+        console.error("Toggle failed:", result.error);
+        alert(`Failed to update endpoint: ${result.error}`);
+        return;
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error toggling endpoint:", error);
+      alert("Failed to update endpoint status");
+    } finally {
+      setActionLoading((prev) => {
+        const next = { ...prev };
+        delete next[endpointId];
+        return next;
+      });
+    }
+  };
+
+  const handleDeleteEndpoint = async (
+    endpointId: string,
+    endpointName: string
+  ) => {
+    if (!endpointId || endpointId === "undefined") {
+      alert("Invalid endpoint ID.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Remove \"${endpointName}\"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setActionLoading((prev) => ({ ...prev, [endpointId]: "delete" }));
+    try {
+      const result = await deleteEndpoint(endpointId);
+
+      if (!result.success) {
+        console.error("Delete failed:", result.error);
+        alert(`Failed to delete endpoint: ${result.error}`);
+        return;
+      }
+
+      setExpandedId((prev) => (prev === endpointId ? null : prev));
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting endpoint:", error);
+      alert("Failed to delete endpoint");
+    } finally {
+      setActionLoading((prev) => {
+        const next = { ...prev };
+        delete next[endpointId];
+        return next;
+      });
     }
   };
 
@@ -234,6 +321,9 @@ export function EndpointsList({
               const isExpanded = expandedId === endpoint.id;
               const history = historicalData[endpoint.id] || [];
               const isLoadingHistory = loadingHistory === endpoint.id;
+              const currentAction = actionLoading[endpoint.id];
+              const isToggling = currentAction === "toggle";
+              const isDeleting = currentAction === "delete";
 
               return (
                 <React.Fragment key={endpoint.id}>
@@ -263,28 +353,97 @@ export function EndpointsList({
                     <td className="p-2 align-middle text-muted-foreground">
                       {formatInterval(endpoint.check_interval)}
                     </td>
-                    <td className="p-2 align-middle text-muted-foreground">
+                    {/* <td className="p-2 align-middle text-muted-foreground">
                       {formatDate(endpoint.created_at)}
-                    </td>
-                    <td className="p-2 align-middle text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => handleCheckNow(endpoint.id, e)}
-                        disabled={isChecking}
-                      >
-                        {isChecking ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Checking...
-                          </>
-                        ) : (
-                          <>
-                            <Activity className="mr-2 h-4 w-4" />
-                            Check Now
-                          </>
-                        )}
-                      </Button>
+                    </td> */}
+                    <td
+                      className="p-2 align-middle text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => handleCheckNow(endpoint.id, e)}
+                          disabled={isChecking}
+                        >
+                          {isChecking ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Checking...
+                            </>
+                          ) : (
+                            <>
+                              <Activity className="mr-2 h-4 w-4" />
+                              Check Now
+                            </>
+                          )}
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Open actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                            <EditEndpointDialog
+                              endpoint={{
+                                id: endpoint.id,
+                                name: endpoint.name,
+                                url: endpoint.url,
+                                check_interval: endpoint.check_interval,
+                              }}
+                              trigger={
+                                <DropdownMenuItem className="gap-2">
+                                  <Pencil className="h-4 w-4" />
+                                  Edit endpoint
+                                </DropdownMenuItem>
+                              }
+                            />
+                            <DropdownMenuItem
+                              className="gap-2"
+                              disabled={isToggling}
+                              onSelect={() => {
+                                void handleToggleEndpoint(endpoint.id);
+                              }}
+                            >
+                              {endpoint.is_active ? (
+                                <Pause className="h-4 w-4" />
+                              ) : (
+                                <Play className="h-4 w-4" />
+                              )}
+                              {isToggling
+                                ? "Updating..."
+                                : endpoint.is_active
+                                  ? "Pause monitoring"
+                                  : "Resume monitoring"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="gap-2 text-destructive focus:text-destructive"
+                              disabled={isDeleting}
+                              onSelect={() => {
+                                void handleDeleteEndpoint(
+                                  endpoint.id,
+                                  endpoint.name
+                                );
+                              }}
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                              {isDeleting ? "Removing..." : "Remove endpoint"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </td>
                   </tr>
                   {isExpanded && (
