@@ -5,7 +5,7 @@ import { checkEndpoint } from "@/app/actions/check-endpoint";
 async function handler() {
   try {
     console.log("🔄 Cron job triggered at:", new Date().toISOString());
-    
+
     // Log environment info (without sensitive data)
     console.log('Environment:', {
       nodeEnv: process.env.NODE_ENV,
@@ -16,14 +16,14 @@ async function handler() {
     // Create Supabase server client
     console.log('Creating Supabase admin client...');
     const supabase = await createAdminClient();
-    
+
     // Test database connection
     console.log('Testing database connection...');
     const { data: testData, error: testError } = await supabase
       .from('endpoints')
       .select('count')
       .limit(1);
-      
+
     if (testError) {
       console.error('❌ Database connection test failed:', testError);
       return Response.json(
@@ -78,7 +78,7 @@ async function handler() {
       const timeSinceLastCheck = (now - lastCheckTime) / 1000; // in seconds
 
       // Check if this endpoint is due for a check
-      if (timeSinceLastCheck >= endpoint.check_interval) {
+      if (timeSinceLastCheck >= (endpoint.check_interval - 10)) {
         endpointsToCheck.push(endpoint);
         console.log(
           `✅ Endpoint "${endpoint.name}" is due for check (${Math.round(
@@ -168,12 +168,12 @@ export async function GET() {
   if (process.env.NODE_ENV !== "development") {
     return Response.json({ error: "Not allowed" }, { status: 403 });
   }
-  
+
   // In development, bypass authentication for GET requests
   return handler();
 }
 
 // For production, use the authenticated POST endpoint
-export const POST = process.env.NODE_ENV === "development" 
-  ? handler 
+export const POST = process.env.NODE_ENV === "development"
+  ? handler
   : verifySignatureAppRouter(handler);

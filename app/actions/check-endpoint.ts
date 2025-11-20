@@ -94,7 +94,7 @@ export async function checkEndpoint(endpointId: string) {
     console.log(`✅ Check completed for ${endpoint.name}: ${status} (${responseTime}ms)`);
 
     // Send notification if this is the first failure (status changed from success to failure)
-    if (status === "failure"){//&& previousStatus === "success") {
+    if (status === "failure" && previousStatus === "success") {
       console.log(`🚨 First failure detected for ${endpoint.name}, sending notification...`);
       
       // Get the user's email from auth.users
