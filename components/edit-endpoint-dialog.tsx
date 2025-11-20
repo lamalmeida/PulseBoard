@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { validateCheckInterval } from "@/lib/rate-limits";
 
 type EditEndpointDialogProps = {
   endpoint: {
@@ -48,20 +49,32 @@ export function EditEndpointDialog({ endpoint, trigger }: EditEndpointDialogProp
     setIsLoading(true);
     setError(null);
 
-    const result = await updateEndpoint(endpoint.id, {
-      name,
-      url,
-      check_interval: parseInt(interval),
-    });
+    try {
+      // Validate check interval
+      const intervalSeconds = parseInt(interval);
+      const validation = validateCheckInterval(intervalSeconds);
+      
+      if (!validation.valid) {
+        setError(validation.error || "Validation failed");
+        setIsLoading(false);
+        return;
+      }
 
-    if (result.success) {
-      setOpen(false);
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to update endpoint");
+      const result = await updateEndpoint(endpoint.id, {
+        name,
+        url,
+        check_interval: intervalSeconds,
+      });
+
+      if (result.success) {
+        setOpen(false);
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to update endpoint");
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -111,7 +124,7 @@ export function EditEndpointDialog({ endpoint, trigger }: EditEndpointDialogProp
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="edit-interval">Check Interval</Label>
+            <Label htmlFor="edit-interval">Check Interval (minimum 1 hour)</Label>
             <Select
               value={interval}
               onValueChange={setInterval}
@@ -121,12 +134,15 @@ export function EditEndpointDialog({ endpoint, trigger }: EditEndpointDialogProp
                 <SelectValue placeholder="Select interval" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="60">Every 1 minute</SelectItem>
-                <SelectItem value="300">Every 5 minutes</SelectItem>
-                <SelectItem value="900">Every 15 minutes</SelectItem>
                 <SelectItem value="3600">Every 1 hour</SelectItem>
+                <SelectItem value="7200">Every 2 hours</SelectItem>
+                <SelectItem value="14400">Every 4 hours</SelectItem>
+                <SelectItem value="86400">Every 24 hours</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Minimum check frequency is 1 hour to ensure fair resource usage.
+            </p>
           </div>
 
           {error && (

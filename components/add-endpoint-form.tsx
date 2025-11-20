@@ -1,3 +1,4 @@
+// components/add-endpoint-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -21,15 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateQStashSchedule } from "@/app/actions/update-qstash-schedule";
+import { validateEndpointCreation } from "@/app/actions/rate-limits";
 
 export function AddEndpointForm() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const [interval, setInterval] = useState("300"); // 5 minutes default
+  const [interval, setInterval] = useState("3600"); // 1 hour default (changed from 5 min)
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -42,9 +44,19 @@ export function AddEndpointForm() {
     try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error("You must be logged in to add an endpoint");
+      }
+
+      // Validate endpoint limit and check interval
+      const intervalSeconds = parseInt(interval);
+      const validation = await validateEndpointCreation(user.id, intervalSeconds);
+
+      if (!validation.valid) {
+        setError(validation.error || "Validation failed");
+        setIsLoading(false);
+        return;
       }
 
       // Insert the endpoint into Supabase
@@ -54,7 +66,7 @@ export function AddEndpointForm() {
           user_id: user.id,
           name: name.trim(),
           url: url.trim(),
-          check_interval: parseInt(interval),
+          check_interval: intervalSeconds,
           is_active: true,
         })
         .select()
@@ -70,7 +82,7 @@ export function AddEndpointForm() {
       setSuccess(true);
       setName("");
       setUrl("");
-      setInterval("300");
+      setInterval("3600");
 
       // Optional: Redirect to endpoints list after 1.5 seconds
       setTimeout(() => {
@@ -90,7 +102,7 @@ export function AddEndpointForm() {
       <CardHeader>
         <CardTitle>Endpoint Details</CardTitle>
         <CardDescription>
-          Add a new endpoint to monitor its health status
+          Add a new endpoint to monitor its health status. You can add up to 10 endpoints.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -123,9 +135,9 @@ export function AddEndpointForm() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="interval">Check Interval</Label>
-              <Select 
-                value={interval} 
+              <Label htmlFor="interval">Check Interval (minimum 1 hour)</Label>
+              <Select
+                value={interval}
                 onValueChange={setInterval}
                 disabled={isLoading}
               >
@@ -133,12 +145,15 @@ export function AddEndpointForm() {
                   <SelectValue placeholder="Select interval" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="60">Every 1 minute</SelectItem>
-                  <SelectItem value="300">Every 5 minutes</SelectItem>
-                  <SelectItem value="900">Every 15 minutes</SelectItem>
                   <SelectItem value="3600">Every 1 hour</SelectItem>
+                  <SelectItem value="7200">Every 2 hours</SelectItem>
+                  <SelectItem value="14400">Every 4 hours</SelectItem>
+                  <SelectItem value="86400">Every 24 hours</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Minimum check frequency is 1 hour to ensure fair resource usage.
+              </p>
             </div>
 
             {error && (
