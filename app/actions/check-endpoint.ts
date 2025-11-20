@@ -19,7 +19,7 @@ export async function checkEndpoint(endpointId: string) {
       console.error(`❌ Endpoint not found: ${endpointId}`, fetchError);
       throw new Error(`Endpoint not found: ${endpointId}`);
     }
-    
+
     console.log(`🔗 Checking endpoint: ${endpoint.name} (${endpoint.url})`);
 
     // Get the previous check status to detect first failure
@@ -45,11 +45,11 @@ export async function checkEndpoint(endpointId: string) {
         headers: {
           "User-Agent": "PulseBoard-Monitor/1.0",
         },
-        signal: AbortSignal.timeout(30000), // 30 second timeout
+        signal: AbortSignal.timeout(5000), // 5 second timeout
       });
 
       statusCode = response.status;
-      
+
       // Consider 2xx and 3xx as success
       if (response.ok || (statusCode >= 200 && statusCode < 400)) {
         status = "success";
@@ -60,10 +60,10 @@ export async function checkEndpoint(endpointId: string) {
     } catch (error: any) {
       status = "failure";
       errorMessage = error.message || "Request failed";
-      
+
       // Handle common errors
       if (error.name === "AbortError" || error.name === "TimeoutError") {
-        errorMessage = "Request timeout (30s)";
+        errorMessage = "Request timeout (5s)";
       } else if (error.code === "ENOTFOUND") {
         errorMessage = "Domain not found";
       } else if (error.code === "ECONNREFUSED") {
@@ -90,13 +90,13 @@ export async function checkEndpoint(endpointId: string) {
       console.error('❌ Failed to insert check result:', insertError);
       throw insertError;
     }
-    
+
     console.log(`✅ Check completed for ${endpoint.name}: ${status} (${responseTime}ms)`);
 
     // Send notification if this is the first failure (status changed from success to failure)
     if (status === "failure" && previousStatus === "success") {
       console.log(`🚨 First failure detected for ${endpoint.name}, sending notification...`);
-      
+
       // Get the user's email from auth.users
       const { data: userData } = await supabase.auth.admin.getUserById(
         endpoint.user_id
