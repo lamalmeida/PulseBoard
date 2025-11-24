@@ -71,17 +71,32 @@ export function EndpointMetrics({ checks }: { checks: Check[] }) {
     return () => clearTimeout(timer);
   }, [theme]);
 
+  // Filter checks from the last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   const recentChecks = checks
+    .filter(check => new Date(check.checked_at) >= thirtyDaysAgo)
     .sort(
       (a, b) =>
         new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime()
-    )
-    .slice(-24);
+    );
 
   const chartData: ChartData<"line"> = {
-    labels: recentChecks.map((check) =>
-      new Date(check.checked_at).toLocaleTimeString()
-    ),
+    labels: recentChecks.map((check) => {
+      const date = new Date(check.checked_at);
+      // Format based on data density
+      if (recentChecks.length > 100) {
+        // For many data points, show just date
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (recentChecks.length > 50) {
+        // For moderate data points, show date and hour
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit' });
+      } else {
+        // For fewer data points, show full date and time
+        return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      }
+    }),
     datasets: [
       {
         label: "Response Time (ms)",
@@ -95,8 +110,8 @@ export function EndpointMetrics({ checks }: { checks: Check[] }) {
         pointBorderWidth: 2,
         borderWidth: 2,
         tension: 0.4,
-        pointRadius: 6,
-        pointHoverRadius: 8,
+        pointRadius: 4,
+        pointHoverRadius: 6,
         yAxisID: "y",
         borderDash: [5, 5],
       },
@@ -110,8 +125,8 @@ export function EndpointMetrics({ checks }: { checks: Check[] }) {
         pointBorderColor: chartColors.background,
         pointBorderWidth: 2,
         borderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8,
+        pointRadius: 4,
+        pointHoverRadius: 6,
         yAxisID: "y1",
         borderDash: [5, 5],
       },

@@ -70,6 +70,7 @@ export function EndpointsList({
   const [historicalData, setHistoricalData] = useState<
     Record<string, HistoricalCheck[]>
   >({});
+  const [totalChecks, setTotalChecks] = useState<Record<string, number>>({});
   const [loadingHistory, setLoadingHistory] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<
     Record<string, "toggle" | "delete" | undefined>
@@ -84,6 +85,7 @@ export function EndpointsList({
 
     setLoadingHistory(endpointId);
     try {
+      // Fetch limited history for display
       const { data, error } = await supabase
         .from("checks")
         .select("id, status, response_time, checked_at, status_code")
@@ -91,10 +93,23 @@ export function EndpointsList({
         .order("checked_at", { ascending: false })
         .limit(10);
 
+      // Fetch total count
+      const { count, error: countError } = await supabase
+        .from("checks")
+        .select("*", { count: "exact", head: true })
+        .eq("endpoint_id", endpointId);
+
       if (!error && data) {
         setHistoricalData((prev) => ({
           ...prev,
           [endpointId]: data,
+        }));
+      }
+
+      if (!countError && count !== null) {
+        setTotalChecks((prev) => ({
+          ...prev,
+          [endpointId]: count,
         }));
       }
     } catch (error) {
@@ -484,7 +499,7 @@ export function EndpointsList({
                                   Total Checks
                                 </div>
                                 <div className="text-2xl font-bold">
-                                  {history.length}
+                                  {totalChecks[endpoint.id] ?? 0}
                                 </div>
                               </div>
                             </div>
