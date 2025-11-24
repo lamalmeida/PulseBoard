@@ -1,3 +1,4 @@
+
 import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest } from "next/server";
 
@@ -14,8 +15,9 @@ export const config = {
      * - favicon.ico (favicon file)
      * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
      * - api/cron (cron endpoint)
+     * - privacy and terms pages (public)
      * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/cron|privacy|terms|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
