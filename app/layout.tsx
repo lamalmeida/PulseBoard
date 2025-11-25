@@ -12,6 +12,7 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: "PulseBoard",
+  icons: { icon: '../public/logo-transparent.png' },
   description: "Monitor the health of your APIs and services",
 };
 
@@ -29,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/logo-transparent.png" />
         <meta property="og:title" content="PulseBoard – Uptime Monitoring Made Simple" />
         <meta property="og:description" content="Check endpoints, get alerts, and stay online. Free for up to 10 monitors." />
         <meta property="og:image" content="https://cbjyjerfpoqcvfuzkbds.supabase.co/storage/v1/object/public/Website%20Images/Screenshot%202025-11-24%20at%204.44.02%20PM.png" />

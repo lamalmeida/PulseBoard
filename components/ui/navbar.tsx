@@ -23,7 +23,8 @@ export function Navbar() {
             <nav className="fixed top-0 left-0 w-full z-50 border-b border-black/5 dark:border-white/5 bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125">
                 <div className="max-w-[1800px] mx-auto px-6 h-20 flex justify-between items-center">
                     <Link href="/" className="flex items-center gap-4">
-                        <div className="w-3 h-3 bg-brand rounded-full" />
+                        <img src="/logo-transparent.png" alt="Logo" className="w-12 h-12 dark:hidden" />
+                        <img src="/logo-dark-transparent.png" alt="Logo" className="w-12 h-12 hidden dark:block" />
                         <span className="text-lg font-bold tracking-tighter uppercase">PulseBoard</span>
                     </Link>
                     {/* ... rest of the navbar ... */}
@@ -38,10 +39,8 @@ export function Navbar() {
         <nav className="fixed top-0 left-0 w-full z-50 border-b border-black/5 dark:border-white/5 bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125">
             <div className="max-w-[1800px] mx-auto px-6 h-20 flex justify-between items-center relative">
                 <Link href="/" className="flex items-center gap-4">
-                    <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
-                    </span>
+                    <img src="/logo-transparent.png" alt="Logo" className="w-12 h-12 dark:hidden" />
+                    <img src="/logo-dark-transparent.png" alt="Logo" className="w-12 h-12 hidden dark:block" />
                     <span className="text-lg font-bold tracking-tighter uppercase">PulseBoard</span>
                 </Link>
                 {/* <div className="hidden md:flex items-center gap-12 text-xs font-mono uppercase tracking-widest opacity-60 absolute left-1/2 -translate-x-1/2">

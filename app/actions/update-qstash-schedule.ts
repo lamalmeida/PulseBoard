@@ -13,11 +13,11 @@ export async function updateQStashSchedule() {
     if (!process.env.QSTASH_TOKEN) {
       throw new Error("QSTASH_TOKEN is not set in environment variables.");
     }
-    
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL}`;
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://pulseboard.lamas-co.com";
     if (!appUrl) {
       throw new Error(
-        "Application URL is not configured. Set NEXT_PUBLIC_APP_URL or VERCEL_URL."
+        "Application URL is not configured. Set NEXT_PUBLIC_APP_URL."
       );
     }
 
