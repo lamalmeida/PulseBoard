@@ -3,17 +3,11 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useState } from "react";
+import { ArrowUpRight, Mail } from "lucide-react";
 
 export function ForgotPasswordForm({
   className,
@@ -46,45 +40,51 @@ export function ForgotPasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {success ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
+      <div className="group border border-black/10 dark:border-white/10 p-8 md:p-12 bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125">
+        {success ? (
+          <>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold leading-tight mb-2">Check Your Email</h2>
+              <p className="text-sm text-muted-foreground">
+                Password reset instructions sent
+              </p>
+            </div>
+            <div className="text-sm text-muted-foreground">
               If you registered using your email and password, you will receive
               a password reset email.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-            <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold leading-tight mb-2">Reset Your Password</h2>
+              <p className="text-sm text-muted-foreground">
+                Type in your email and we&apos;ll send you a link to reset your
+                password
+              </p>
+            </div>
             <form onSubmit={handleForgotPassword}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="m@example.com"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 bg-transparent border-black/10 dark:border-white/10"
+                    />
+                  </div>
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
+                <Button type="submit" className="w-full group relative overflow-hidden" size="xl" disabled={isLoading}>
+                  <span className="relative z-10 font-medium text-sm flex items-center justify-center gap-2">
+                    {isLoading ? "Sending..." : "Send reset email"} <ArrowUpRight className="w-4 h-4" />
+                  </span>
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
@@ -97,9 +97,9 @@ export function ForgotPasswordForm({
                 </Link>
               </div>
             </form>
-          </CardContent>
-        </Card>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
