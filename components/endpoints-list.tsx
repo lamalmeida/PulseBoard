@@ -12,6 +12,7 @@ import {
   Filter,
   ExternalLink,
   Pencil,
+  Search,
 } from "lucide-react";
 import { checkEndpoint } from "@/app/actions/check-endpoint";
 import { useRouter } from "next/navigation";
@@ -25,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 type Endpoint = {
   id: string;
@@ -62,6 +64,7 @@ export function EndpointsList({
     direction: "asc",
   });
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
   const handleCheckNow = async (
@@ -175,6 +178,16 @@ export function EndpointsList({
   const sortedAndFilteredEndpoints = useMemo(() => {
     let filtered = [...endpoints];
 
+    // Search
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (endpoint) =>
+          endpoint.name.toLowerCase().includes(query) ||
+          endpoint.url.toLowerCase().includes(query)
+      );
+    }
+
     // Filter
     if (filterStatus !== "all") {
       filtered = filtered.filter((endpoint) => {
@@ -228,7 +241,7 @@ export function EndpointsList({
 
       return 0;
     });
-  }, [endpoints, filterStatus, sortConfig, checkResults]);
+  }, [endpoints, filterStatus, sortConfig, checkResults, searchQuery]);
 
   const SortIcon = ({ columnKey }: { columnKey: SortConfig["key"] }) => {
     if (sortConfig.key !== columnKey) {
@@ -253,15 +266,26 @@ export function EndpointsList({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="flex flex-1 items-center gap-2 w-full sm:max-w-md">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search endpoints..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
+          </div>
           <Select
             value={filterStatus}
             onValueChange={(value) => setFilterStatus(value as FilterStatus)}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="Filter by status" />
+              </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
