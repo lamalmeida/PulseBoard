@@ -31,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="google-site-verification" content="nUAk9RGSE3bElxCeyrQa3SDlXSGGffB_9_bDL_7MA3o" />
         <link rel="icon" href="/logo-transparent.png" />
         <meta property="og:title" content="PulseBoard – Uptime Monitoring Made Simple" />
         <meta property="og:description" content="Check endpoints, get alerts, and stay online. Free for up to 10 monitors." />
