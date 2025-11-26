@@ -23,7 +23,7 @@ const calculateStats = (checks: any[]) => {
   const avgResponse =
     successChecks.length > 0
       ? successChecks.reduce((sum, c) => sum + c.response_time, 0) /
-        successChecks.length
+      successChecks.length
       : 0;
   const totalOffline = checks.length - successChecks.length;
 
@@ -41,11 +41,11 @@ export default async function EndpointDetailPage({
 }) {
   // Ensure we have the actual params object, not a Promise
   const params = await Promise.resolve(paramsPromise);
-  
+
   console.log('EndpointDetailPage params:', params);
   const endpointId = params?.endpointId;
   console.log('endpointId from params:', endpointId);
-  
+
   if (!endpointId) {
     console.error('No endpointId found in params');
     redirect('/protected/endpoints');
@@ -158,7 +158,7 @@ export default async function EndpointDetailPage({
       {/* Full History Table */}
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-4">Check History</h2>
-        <EndpointHistoryTable checks={checks || []} />
+        <EndpointHistoryTable checks={checks || []} endpointId={endpointId} />
       </div>
     </div>
   );

@@ -263,6 +263,9 @@ export function EndpointsList({
         <p className="text-muted-foreground mb-4">
           No endpoints yet. Add your first endpoint to start monitoring!
         </p>
+        <Button asChild>
+          <Link href="/protected/endpoints/add">Add Endpoint</Link>
+        </Button>
       </div>
     );
   }
@@ -303,13 +306,13 @@ export function EndpointsList({
       <div className="flow-root">
         <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 dark:ring-white/10 sm:rounded-lg">
+              <table className="min-w-full divide-y divide-gray-300 dark:divide-white/10">
+                <thead className="bg-gray-50 dark:bg-white/5">
                   <tr>
                     <th
                       scope="col"
-                      className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                      className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
                       onClick={() => handleSort("name")}
                     >
                       <div className="flex items-center">
@@ -322,7 +325,7 @@ export function EndpointsList({
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
                       onClick={() => handleSort("status")}
                     >
                       <div className="flex items-center">
@@ -332,7 +335,7 @@ export function EndpointsList({
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
                       onClick={() => handleSort("last_check")}
                     >
                       <div className="flex items-center">
@@ -342,7 +345,7 @@ export function EndpointsList({
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
                       onClick={() => handleSort("next_check")}
                     >
                       <div className="flex items-center">
@@ -355,7 +358,7 @@ export function EndpointsList({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                <tbody className="divide-y divide-gray-200 dark:divide-white/10 bg-white dark:bg-transparent">
                   {sortedAndFilteredEndpoints.length === 0 && !searchQuery && filterStatus === 'all' && (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-muted-foreground">
@@ -380,7 +383,7 @@ export function EndpointsList({
                     const isChecking = checkingId === endpoint.id;
 
                     return (
-                      <tr key={endpoint.id} className="even:bg-gray-50 dark:even:bg-gray-800/50">
+                      <tr key={endpoint.id} className="even:bg-gray-50 dark:even:bg-white/5">
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-100 sm:pl-6">
                           {endpoint.name}
                         </td>
