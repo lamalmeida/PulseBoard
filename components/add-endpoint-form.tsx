@@ -23,23 +23,55 @@ import {
 } from "@/components/ui/select";
 import { updateQStashSchedule } from "@/app/actions/update-qstash-schedule";
 import { validateEndpointCreation } from "@/app/actions/rate-limits";
+import { toast } from "@/lib/toast";
 
 export function AddEndpointForm() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const [interval, setInterval] = useState("3600"); // 1 hour default (changed from 5 min)
+  const [interval, setInterval] = useState("3600"); // 1 hour default
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    url?: string;
+    interval?: string;
+  }>({});
 
   const router = useRouter();
   const supabase = createClient();
 
+  const validateUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    if (name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+
+    if (!validateUrl(url)) {
+      newErrors.url = "Please enter a valid URL";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please fix validation errors");
+      return;
+    }
+
     setIsLoading(true);
-    setError(null);
-    setSuccess(false);
 
     try {
       // Get the current user
@@ -54,7 +86,7 @@ export function AddEndpointForm() {
       const validation = await validateEndpointCreation(user.id, intervalSeconds);
 
       if (!validation.valid) {
-        setError(validation.error || "Validation failed");
+        toast.error(validation.error || "Validation failed");
         setIsLoading(false);
         return;
       }
@@ -75,23 +107,22 @@ export function AddEndpointForm() {
       if (insertError) throw insertError;
 
       console.log("✅ Endpoint created:", data);
+      toast.success(`Endpoint "${name}" created successfully!`);
 
       await updateQStashSchedule();
 
-      // Show success and clear form
-      setSuccess(true);
+      // Clear form
       setName("");
       setUrl("");
       setInterval("3600");
 
-      // Optional: Redirect to endpoints list after 1.5 seconds
-      setTimeout(() => {
-        router.push("/protected/endpoints");
-      }, 1500);
+      // Redirect to endpoints list
+      router.push("/protected/endpoints");
 
     } catch (err: any) {
       console.error("❌ Error creating endpoint:", err);
-      setError(err.message || "Failed to create endpoint");
+      const errorMessage = err.message || "Failed to create endpoint";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -116,9 +147,16 @@ export function AddEndpointForm() {
                 placeholder="e.g., My API, Production Server"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) setErrors({ ...errors, name: undefined });
+                }}
                 disabled={isLoading}
+                className={errors.name ? "border-red-500" : ""}
               />
+              {errors.name && (
+                <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -129,9 +167,16 @@ export function AddEndpointForm() {
                 placeholder="https://api.example.com/health"
                 required
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  if (errors.url) setErrors({ ...errors, url: undefined });
+                }}
                 disabled={isLoading}
+                className={errors.url ? "border-red-500" : ""}
               />
+              {errors.url && (
+                <p className="text-xs text-red-500 mt-1">{errors.url}</p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -155,18 +200,6 @@ export function AddEndpointForm() {
                 Minimum check frequency is 1 hour to ensure fair resource usage.
               </p>
             </div>
-
-            {error && (
-              <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="p-3 rounded-md bg-green-500/10 text-green-600 text-sm">
-                ✅ Endpoint added successfully! Redirecting...
-              </div>
-            )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Adding..." : "Add Endpoint"}

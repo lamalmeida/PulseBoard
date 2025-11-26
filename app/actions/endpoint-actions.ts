@@ -16,7 +16,13 @@ export async function toggleEndpointStatus(endpointId: string) {
       .single();
 
     if (fetchError || !endpoint) {
-      return { success: false, error: "Endpoint not found" };
+      return {
+        success: false,
+        error: {
+          message: "Endpoint not found",
+          code: 'ENDPOINT_NOT_FOUND'
+        }
+      };
     }
 
     // Toggle the status
@@ -26,7 +32,13 @@ export async function toggleEndpointStatus(endpointId: string) {
       .eq("id", endpointId);
 
     if (updateError) {
-      return { success: false, error: updateError.message };
+      return {
+        success: false,
+        error: {
+          message: updateError.message,
+          code: 'UPDATE_FAILED'
+        }
+      };
     }
 
     // Update QStash schedule
@@ -35,7 +47,13 @@ export async function toggleEndpointStatus(endpointId: string) {
     revalidatePath("/protected/endpoints");
     return { success: true, is_active: !endpoint.is_active };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: {
+        message: error.message || "Operation failed",
+        code: 'ENDPOINT_UPDATE_FAILED'
+      }
+    };
   }
 }
 
@@ -50,7 +68,13 @@ export async function deleteEndpoint(endpointId: string) {
       .eq("endpoint_id", endpointId);
 
     if (checksError) {
-      return { success: false, error: checksError.message };
+      return {
+        success: false,
+        error: {
+          message: checksError.message,
+          code: 'DELETE_CHECKS_FAILED'
+        }
+      };
     }
 
     // Delete the endpoint
@@ -60,7 +84,13 @@ export async function deleteEndpoint(endpointId: string) {
       .eq("id", endpointId);
 
     if (endpointError) {
-      return { success: false, error: endpointError.message };
+      return {
+        success: false,
+        error: {
+          message: endpointError.message,
+          code: 'DELETE_ENDPOINT_FAILED'
+        }
+      };
     }
 
     // Update QStash schedule
@@ -69,7 +99,13 @@ export async function deleteEndpoint(endpointId: string) {
     revalidatePath("/protected/endpoints");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: {
+        message: error.message || "Operation failed",
+        code: 'ENDPOINT_DELETE_FAILED'
+      }
+    };
   }
 }
 
@@ -94,7 +130,13 @@ export async function updateEndpoint(
       .eq("id", endpointId);
 
     if (error) {
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: {
+          message: error.message,
+          code: 'UPDATE_FAILED'
+        }
+      };
     }
 
     // Update QStash schedule
@@ -103,6 +145,12 @@ export async function updateEndpoint(
     revalidatePath("/protected/endpoints");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: {
+        message: error.message || "Operation failed",
+        code: 'ENDPOINT_UPDATE_FAILED'
+      }
+    };
   }
 }
