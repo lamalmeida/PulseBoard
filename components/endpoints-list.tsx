@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/lib/toast";
 
 type Endpoint = {
   id: string;
@@ -73,7 +74,7 @@ export function EndpointsList({
   ) => {
     e.stopPropagation();
     if (!endpointId || endpointId === "undefined") {
-      alert("Invalid endpoint ID.");
+      toast.error("Invalid endpoint ID");
       return;
     }
 
@@ -82,6 +83,7 @@ export function EndpointsList({
       const result = await checkEndpoint(endpointId);
 
       if (result.success && result.check) {
+        toast.success(`Check completed for ${result.check.endpoint_id ? 'endpoint' : 'endpoint'}`);
         setCheckResults((prev) => ({
           ...prev,
           [endpointId]: result.check,
@@ -89,11 +91,12 @@ export function EndpointsList({
         router.refresh();
       } else {
         console.error("Check failed:", result.error);
-        alert(`Check failed: ${result.error}`);
+        toast.error(`Check failed: ${result.error?.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Error checking endpoint:", error);
-      alert("Failed to check endpoint");
+      const message = error instanceof Error ? error.message : "Failed to check endpoint";
+      toast.error(message);
     } finally {
       setCheckingId(null);
     }
@@ -353,6 +356,22 @@ export function EndpointsList({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                  {sortedAndFilteredEndpoints.length === 0 && !searchQuery && filterStatus === 'all' && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                        No endpoints found. Add your first endpoint to get started!
+                      </td>
+                    </tr>
+                  )}
+
+                  {sortedAndFilteredEndpoints.length === 0 && (searchQuery || filterStatus !== 'all') && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                        No endpoints match your filters
+                      </td>
+                    </tr>
+                  )}
+
                   {sortedAndFilteredEndpoints.map((endpoint) => {
                     if (!endpoint?.id || endpoint.id === "undefined") return null;
 

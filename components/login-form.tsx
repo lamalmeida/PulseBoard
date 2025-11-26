@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowUpRight, Mail, Lock } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 export function LoginForm({
   className,
@@ -31,11 +32,21 @@ export function LoginForm({
         email,
         password,
       });
-      if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
+      if (error) {
+        // Map Supabase errors to user-friendly messages
+        const errorMessages: Record<string, string> = {
+          'Invalid login credentials': 'Email or password is incorrect',
+          'Email not confirmed': 'Please confirm your email before logging in',
+        };
+        throw new Error(errorMessages[error.message] || error.message);
+      }
+
+      toast.success("Welcome back!");
       router.push("/protected/endpoints");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      const message = error instanceof Error ? error.message : "Login failed. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
