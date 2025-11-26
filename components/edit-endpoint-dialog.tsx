@@ -24,6 +24,7 @@ import {
 import { Pencil, Pause, Play, Trash2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { validateCheckInterval } from "@/lib/rate-limits";
+import { toast } from "@/lib/toast";
 
 type EditEndpointDialogProps = {
   endpoint: {
@@ -57,7 +58,9 @@ export function EditEndpointDialog({ endpoint, trigger }: EditEndpointDialogProp
       const validation = validateCheckInterval(intervalSeconds);
 
       if (!validation.valid) {
-        setError(validation.error || "Validation failed");
+        const errorMsg = validation.error || "Validation failed";
+        setError(errorMsg);
+        toast.error(errorMsg);
         setIsLoading(false);
         return;
       }
@@ -69,11 +72,18 @@ export function EditEndpointDialog({ endpoint, trigger }: EditEndpointDialogProp
       });
 
       if (result.success) {
+        toast.success("Endpoint updated successfully");
         setOpen(false);
         router.refresh();
       } else {
-        setError(result.error || "Failed to update endpoint");
+        const errorMsg = result.error?.message || "Failed to update endpoint";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
+    } catch (err: any) {
+      const errorMsg = err.message || "Failed to update endpoint";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -84,13 +94,19 @@ export function EditEndpointDialog({ endpoint, trigger }: EditEndpointDialogProp
     try {
       const result = await toggleEndpointStatus(endpoint.id);
       if (result.success) {
+        const action = result.is_active ? "resumed" : "paused";
+        toast.success(`Endpoint ${action} successfully`);
         setOpen(false);
         router.refresh();
       } else {
-        setError(result.error || "Failed to update status");
+        const errorMsg = result.error?.message || "Failed to update status";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
-    } catch (error) {
-      setError("Failed to update status");
+    } catch (error: any) {
+      const errorMsg = error.message || "Failed to update status";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setActionLoading(null);
     }
@@ -105,13 +121,18 @@ export function EditEndpointDialog({ endpoint, trigger }: EditEndpointDialogProp
     try {
       const result = await deleteEndpoint(endpoint.id);
       if (result.success) {
+        toast.success("Endpoint deleted successfully");
         setOpen(false);
         router.refresh();
       } else {
-        setError(result.error || "Failed to delete endpoint");
+        const errorMsg = result.error?.message || "Failed to delete endpoint";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
-    } catch (error) {
-      setError("Failed to delete endpoint");
+    } catch (error: any) {
+      const errorMsg = error.message || "Failed to delete endpoint";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setActionLoading(null);
     }

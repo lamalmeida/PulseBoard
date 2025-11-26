@@ -27,7 +27,12 @@ async function handler() {
     if (testError) {
       console.error('❌ Database connection test failed:', testError);
       return Response.json(
-        { error: `Database connection failed: ${testError.message}` },
+        {
+          error: "Database connection failed",
+          code: "DB_CONNECTION_ERROR",
+          message: testError.message,
+          timestamp: new Date().toISOString()
+        },
         { status: 500 }
       );
     }
@@ -42,7 +47,12 @@ async function handler() {
     if (endpointsError) {
       console.error("❌ Error fetching endpoints:", endpointsError);
       return Response.json(
-        { error: "Failed to fetch endpoints" },
+        {
+          error: "Failed to fetch endpoints",
+          code: "FETCH_ENDPOINTS_ERROR",
+          message: endpointsError.message,
+          timestamp: new Date().toISOString()
+        },
         { status: 500 }
       );
     }
@@ -157,7 +167,12 @@ async function handler() {
   } catch (error) {
     console.error("❌ Cron job error:", error);
     return Response.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        code: "CRON_JOB_ERROR",
+        message: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

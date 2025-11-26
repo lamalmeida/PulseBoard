@@ -3,6 +3,16 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendFailureNotification } from "@/app/actions/send-failure-notification";
 
+interface ActionResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: {
+    message: string;
+    code: string;
+    details?: unknown;
+  };
+}
+
 export async function checkEndpoint(endpointId: string) {
   console.log(`🔍 Starting check for endpoint: ${endpointId}`);
   const supabase = await createAdminClient();
@@ -136,9 +146,11 @@ export async function checkEndpoint(endpointId: string) {
     console.error(`❌ Error checking endpoint ${endpointId}:`, error);
     return {
       success: false,
-      error: error.message || "Failed to check endpoint",
-      details: error.details || null,
-      code: error.code || 'UNKNOWN_ERROR'
+      error: {
+        message: error.message || "Failed to check endpoint",
+        code: error.code || 'CHECK_FAILED',
+        details: error.details || null
+      }
     };
   }
 }

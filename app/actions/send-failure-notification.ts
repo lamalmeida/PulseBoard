@@ -8,6 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 interface NotificationResult {
   success: boolean;
   message: string;
+  code?: string;
   emailSent?: boolean;
 }
 
@@ -39,6 +40,7 @@ export async function sendFailureNotification(
       return {
         success: false,
         message: `Failed to check notification history: ${checkError.message}`,
+        code: 'NOTIFICATION_CHECK_FAILED'
       };
     }
 
@@ -50,6 +52,7 @@ export async function sendFailureNotification(
       return {
         success: true,
         message: "Notification already sent within 24 hours",
+        code: 'ALREADY_SENT',
         emailSent: false,
       };
     }
@@ -89,6 +92,7 @@ export async function sendFailureNotification(
       return {
         success: false,
         message: `Failed to send email: ${emailError.message}`,
+        code: 'EMAIL_SEND_FAILED'
       };
     }
 
@@ -109,6 +113,7 @@ export async function sendFailureNotification(
       return {
         success: true,
         message: "Email sent but failed to record notification",
+        code: 'NOTIFICATION_RECORD_FAILED',
         emailSent: true,
       };
     }
@@ -118,6 +123,7 @@ export async function sendFailureNotification(
     return {
       success: true,
       message: "Notification sent successfully",
+      code: 'SUCCESS',
       emailSent: true,
     };
   } catch (error: any) {
@@ -125,6 +131,7 @@ export async function sendFailureNotification(
     return {
       success: false,
       message: error.message || "Unknown error occurred",
+      code: 'UNKNOWN_ERROR'
     };
   }
 }
