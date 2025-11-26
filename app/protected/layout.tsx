@@ -11,12 +11,16 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top Navigation Bar */}
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-        <div className="w-full max-w-full flex justify-between items-center p-3 px-5 text-sm">
+      <nav className="w-full flex justify-center border-b border-black/5 dark:border-white/5 h-20 bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125">
+        <div className="w-full max-w-full flex justify-between items-center px-6 h-full text-sm">
           <div className="flex gap-5 items-center font-semibold">
-            <Link href="/protected/endpoints">PulseBoard</Link>
+            <Link href="/protected/endpoints" className="flex items-center gap-4">
+              <img src="/logo-transparent.png" alt="Logo" className="w-12 h-12 dark:hidden" />
+              <img src="/logo-dark-transparent.png" alt="Logo" className="w-12 h-12 hidden dark:block" />
+              <span className="text-lg font-bold tracking-tighter uppercase">PulseBoard</span>
+            </Link>
           </div>
-            <AuthButton />
+          <AuthButton />
         </div>
       </nav>
 
