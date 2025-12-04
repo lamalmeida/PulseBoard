@@ -17,21 +17,22 @@ export async function sendFailureNotification(
   endpointName: string,
   endpointUrl: string,
   errorMessage: string,
-  recipientEmail: string
+  recipientEmail: string,
+  cooldownSeconds: number = 3600 // Default 1 hour
 ): Promise<NotificationResult> {
   const supabase = await createAdminClient();
 
   try {
-    // Check if we've already sent a notification for this endpoint today
-    const twentyFourHoursAgo = new Date();
-    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+    // Check if we've already sent a notification within the cooldown period
+    const cooldownTime = new Date();
+    cooldownTime.setSeconds(cooldownTime.getSeconds() - cooldownSeconds);
 
     const { data: recentNotifications, error: checkError } = await supabase
       .from("notifications")
       .select("id, sent_at")
       .eq("endpoint_id", endpointId)
       .eq("notification_type", "failure")
-      .gte("sent_at", twentyFourHoursAgo.toISOString())
+      .gte("sent_at", cooldownTime.toISOString())
       .order("sent_at", { ascending: false })
       .limit(1);
 
@@ -44,14 +45,15 @@ export async function sendFailureNotification(
       };
     }
 
-    // If a notification was sent in the last 24 hours, skip
+    // If a notification was sent within the cooldown period, skip
     if (recentNotifications && recentNotifications.length > 0) {
+      const cooldownHours = Math.round(cooldownSeconds / 3600 * 10) / 10;
       console.log(
-        `⏭️ Skipping notification for ${endpointName} - already sent within 24h`
+        `⏭️ Skipping notification for ${endpointName} - already sent within ${cooldownHours}h`
       );
       return {
         success: true,
-        message: "Notification already sent within 24 hours",
+        message: `Notification already sent within ${cooldownHours} hours`,
         code: 'ALREADY_SENT',
         emailSent: false,
       };
@@ -81,7 +83,7 @@ export async function sendFailureNotification(
           
           <p style="color: #6b7280; font-size: 14px;">
             This is an automated notification from PulseBoard. 
-            You will not receive another notification for this endpoint for the next 24 hours.
+            You will not receive another notification for this endpoint for the next ${Math.round(cooldownSeconds / 3600 * 10) / 10} hours.
           </p>
         </div>
       `,

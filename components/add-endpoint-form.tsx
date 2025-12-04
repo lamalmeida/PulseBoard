@@ -36,6 +36,11 @@ export function AddEndpointForm() {
     interval?: string;
   }>({});
 
+  const [sensitivity, setSensitivity] = useState("2");
+  const [cooldown, setCooldown] = useState("3600");
+  const [recovery, setRecovery] = useState(true);
+  const [escalation, setEscalation] = useState("0");
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -100,6 +105,10 @@ export function AddEndpointForm() {
           url: url.trim(),
           check_interval: intervalSeconds,
           is_active: true,
+          consecutive_failures_threshold: parseInt(sensitivity),
+          notification_cooldown_seconds: parseInt(cooldown),
+          send_recovery_notifications: recovery,
+          escalation_interval_minutes: parseInt(escalation) > 0 ? parseInt(escalation) : null,
         })
         .select()
         .single();
@@ -115,6 +124,10 @@ export function AddEndpointForm() {
       setName("");
       setUrl("");
       setInterval("3600");
+      setSensitivity("2");
+      setCooldown("3600");
+      setRecovery(true);
+      setEscalation("0");
 
       // Redirect to endpoints list
       router.push("/protected/endpoints");
@@ -199,6 +212,91 @@ export function AddEndpointForm() {
               <p className="text-xs text-muted-foreground">
                 Minimum check frequency is 1 hour to ensure fair resource usage.
               </p>
+            </div>
+
+            <div className="border-t pt-4 mt-2">
+              <h4 className="text-sm font-medium mb-4">Notification Settings</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="sensitivity">Sensitivity</Label>
+                  <Select
+                    value={sensitivity}
+                    onValueChange={setSensitivity}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="sensitivity">
+                      <SelectValue placeholder="Select sensitivity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Immediate (1 failure)</SelectItem>
+                      <SelectItem value="2">2 consecutive failures</SelectItem>
+                      <SelectItem value="3">3 consecutive failures</SelectItem>
+                      <SelectItem value="5">5 consecutive failures</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Failures before sending an alert.
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="cooldown">Cooldown Period</Label>
+                  <Select
+                    value={cooldown}
+                    onValueChange={setCooldown}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="cooldown">
+                      <SelectValue placeholder="Select cooldown" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1800">30 minutes</SelectItem>
+                      <SelectItem value="3600">1 hour</SelectItem>
+                      <SelectItem value="14400">4 hours</SelectItem>
+                      <SelectItem value="86400">24 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Wait time before repeating alerts.
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="escalation">Escalation</Label>
+                  <Select
+                    value={escalation}
+                    onValueChange={setEscalation}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="escalation">
+                      <SelectValue placeholder="Select escalation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">None</SelectItem>
+                      <SelectItem value="3600">After 1 hour</SelectItem>
+                      <SelectItem value="14400">After 4 hours</SelectItem>
+                      <SelectItem value="86400">After 24 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Repeat alert if still down.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-8">
+                  <input
+                    type="checkbox"
+                    id="recovery"
+                    checked={recovery}
+                    onChange={(e) => setRecovery(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <Label htmlFor="recovery" className="font-normal">
+                    Notify when recovered
+                  </Label>
+                </div>
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>

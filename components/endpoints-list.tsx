@@ -18,7 +18,7 @@ import { checkEndpoint } from "@/app/actions/check-endpoint";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import React from "react";
-import { EditEndpointDialog } from "@/components/edit-endpoint-dialog";
+
 import {
   Select,
   SelectContent,
@@ -432,25 +432,17 @@ export function EndpointsList({
                                 <span className="ml-2 hidden sm:inline">Details</span>
                               </Link>
                             </Button>
-                            <EditEndpointDialog
-                              endpoint={{
-                                id: endpoint.id,
-                                name: endpoint.name,
-                                url: endpoint.url,
-                                check_interval: endpoint.check_interval,
-                                is_active: endpoint.is_active,
-                              }}
-                              trigger={
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="relative -ml-px inline-flex items-center rounded-r-md rounded-l-none border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                  <span className="ml-2 hidden sm:inline">Edit</span>
-                                </Button>
-                              }
-                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                              className="relative -ml-px inline-flex items-center rounded-r-md rounded-l-none border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+                            >
+                              <Link href={`/protected/endpoints/${endpoint.id}/edit`}>
+                                <Pencil className="h-4 w-4" />
+                                <span className="ml-2 hidden sm:inline">Edit</span>
+                              </Link>
+                            </Button>
                           </span>
                         </td>
                       </tr>
