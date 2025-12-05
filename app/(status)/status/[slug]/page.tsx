@@ -1,46 +1,77 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, AlertTriangle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default async function StatusPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const supabase = await createClient();
 
-    const { data: endpoint } = await supabase
-        .from("endpoints")
-        .select("*")
+    // 1. Fetch Status Page
+    const { data: statusPage } = await supabase
+        .from("status_pages")
+        .select("*, status_page_endpoints(endpoint_id)")
         .eq("slug", slug)
         .eq("is_public", true)
         .single();
 
-    if (!endpoint) {
+    if (!statusPage) {
         notFound();
     }
 
-    // Fetch checks (reverse order to get latest first, then we reverse back for display)
-    const { data: checks } = await supabase
-        .from("checks")
-        .select("id, status, response_time, checked_at")
-        .eq("endpoint_id", endpoint.id)
-        .order("checked_at", { ascending: false })
-        .limit(90);
+    // 2. Fetch Endpoints Details
+    const endpointIds = statusPage.status_page_endpoints.map((spe: any) => spe.endpoint_id);
 
-    const checksHistory = checks ? [...checks].reverse() : [];
-    const latestCheck = checks?.[0];
-    const isOnline = latestCheck?.status === "success";
+    if (endpointIds.length === 0) {
+        // Handle empty status page
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold">{statusPage.title}</h1>
+                    <p className="text-muted-foreground mt-2">No endpoints configured for this status page.</p>
+                </div>
+            </div>
+        );
+    }
 
-    // Calculate uptime percentage (simple based on fetched checks)
-    const successCount = checks?.filter(c => c.status === "success").length || 0;
-    const totalCount = checks?.length || 0;
-    const uptimePercentage = totalCount > 0 ? ((successCount / totalCount) * 100).toFixed(1) : "100";
+    const { data: endpoints } = await supabase
+        .from("endpoints")
+        .select("id, name, url")
+        .in("id", endpointIds)
+        .order("name");
+
+    // 3. Fetch Checks for all endpoints
+    // We want the last 90 checks for each endpoint.
+    // Doing this efficienty in one query is tricky in Supabase without a stored procedure for lateral joins.
+    // We will iterate and fetch in parallel for now (assuming low number of endpoints per page).
+
+    const endpointsWithChecks = await Promise.all(
+        (endpoints || []).map(async (endpoint) => {
+            const { data: checks } = await supabase
+                .from("checks")
+                .select("id, status, response_time, checked_at")
+                .eq("endpoint_id", endpoint.id)
+                .order("checked_at", { ascending: false })
+                .limit(90);
+
+            return {
+                ...endpoint,
+                checks: checks ? [...checks].reverse() : [],
+                latestCheck: checks?.[0]
+            };
+        })
+    );
+
+    // 4. Calculate Overall Status
+    const anyDown = endpointsWithChecks.some(e => e.latestCheck?.status === "error");
+    const anyIssues = endpointsWithChecks.some(e => e.latestCheck?.status === "error" || !e.latestCheck); // Consider empty checks as unknown/issue? Maybe not.
+    const isSystemOperational = !anyDown;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background pb-12">
             {/* Header */}
             <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -64,84 +95,89 @@ export default async function StatusPage({ params }: { params: Promise<{ slug: s
                 </div>
             </header>
 
-            <main className="max-w-4xl mx-auto px-4 py-12 space-y-8">
+            <main className="max-w-4xl mx-auto px-4 py-12 space-y-12">
 
                 {/* Status Banner */}
                 <div className="flex flex-col items-center justify-center text-center space-y-4">
-                    <div className={`p-4 rounded-full ${isOnline ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                        {isOnline ? (
+                    <div className={`p-4 rounded-full ${isSystemOperational ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                        {isSystemOperational ? (
                             <CheckCircle2 className="w-12 h-12" />
                         ) : (
-                            <XCircle className="w-12 h-12" />
+                            anyDown ? <XCircle className="w-12 h-12" /> : <AlertTriangle className="w-12 h-12" />
                         )}
                     </div>
 
-                    <h1 className="text-3xl font-bold tracking-tight">{endpoint.public_title || endpoint.name}</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{statusPage.title}</h1>
 
-                    {endpoint.public_description && (
+                    {statusPage.description && (
                         <p className="text-muted-foreground max-w-2xl text-lg">
-                            {endpoint.public_description}
+                            {statusPage.description}
                         </p>
                     )}
 
-                    <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border ${isOnline
+                    <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border ${isSystemOperational
                             ? 'bg-green-500/5 text-green-600 border-green-500/20'
                             : 'bg-red-500/5 text-red-600 border-red-500/20'
                         }`}>
-                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
-                        {isOnline ? 'Operational' : 'Service Disruption'}
+                        <span className={`w-2 h-2 rounded-full ${isSystemOperational ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+                        {isSystemOperational ? 'All Systems Operational' : 'Active Incidents Reported'}
                     </div>
                 </div>
 
-                {/* Uptime Visualization */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                        <CardTitle className="text-base font-medium">Uptime History (Last 90 Checks)</CardTitle>
-                        <div className="text-sm text-muted-foreground">
-                            {uptimePercentage}% Uptime
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-end gap-[1px] h-16 w-full">
-                            {checksHistory.map((check) => {
-                                let colorClass = "bg-gray-200 dark:bg-gray-800";
-                                if (check.status === "success") colorClass = "bg-green-500";
-                                if (check.status === "error") colorClass = "bg-red-500";
+                {/* Endpoints List */}
+                <div className="space-y-6">
+                    <h2 className="text-xl font-semibold">System Metrics</h2>
+                    {endpointsWithChecks.map((endpoint) => {
+                        const totalChecks = endpoint.checks.length;
+                        const successCount = endpoint.checks.filter(c => c.status === "success").length;
+                        const uptime = totalChecks > 0 ? ((successCount / totalChecks) * 100).toFixed(1) : "100";
+                        const isUp = endpoint.latestCheck?.status === "success" || !endpoint.latestCheck; // Default to up if no checks? Or unknown.
 
-                                // Tooltip logic can be complex in server components without client logic
-                                // Using simple title attribute for now
-                                return (
-                                    <div
-                                        key={check.id}
-                                        title={`${new Date(check.checked_at).toLocaleString()} - ${check.response_time}ms`}
-                                        className={`flex-1 rounded-sm transition-all hover:opacity-80 ${colorClass}`}
-                                        style={{
-                                            height: '100%',
-                                            opacity: 0.8
-                                        }}
-                                    />
-                                );
-                            })}
-                            {/* Fill remaining slots if less than 90? */}
-                            {Array.from({ length: Math.max(0, 90 - checksHistory.length) }).map((_, i) => (
-                                <div
-                                    key={`empty-${i}`}
-                                    className="flex-1 bg-muted/30 rounded-sm h-full"
-                                />
-                            ))}
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                            <span>90 checks ago</span>
-                            <span>Today</span>
-                        </div>
-                    </CardContent>
-                </Card>
+                        return (
+                            <Card key={endpoint.id}>
+                                <CardHeader className="pb-2">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            {isUp ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />}
+                                            {endpoint.name}
+                                        </CardTitle>
+                                        <span className={`text-sm font-medium ${isUp ? 'text-green-600' : 'text-red-600'}`}>
+                                            {uptime}% Uptime
+                                        </span>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-end gap-[2px] h-12 w-full">
+                                        {endpoint.checks.map((check) => {
+                                            let colorClass = "bg-muted";
+                                            if (check.status === "success") colorClass = "bg-green-500";
+                                            if (check.status === "error") colorClass = "bg-red-500";
 
-                {/* Latest Checks List (Optional) */}
-                {/* <Card>
-           ...
-        </Card> */}
-
+                                            return (
+                                                <div
+                                                    key={check.id}
+                                                    title={`${new Date(check.checked_at).toLocaleString()} - ${check.response_time}ms`}
+                                                    className={`flex-1 rounded-[1px] ${colorClass}`}
+                                                    style={{ height: '100%', opacity: 0.8 }}
+                                                />
+                                            );
+                                        })}
+                                        {Array.from({ length: Math.max(0, 90 - endpoint.checks.length) }).map((_, i) => (
+                                            <div
+                                                key={`empty-${i}`}
+                                                className="flex-1 bg-muted/20 rounded-[1px] h-full"
+                                            />
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                                        <span>90 checks ago</span>
+                                        <span>Today</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
             </main>
         </div>
     );

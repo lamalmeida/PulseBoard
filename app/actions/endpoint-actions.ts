@@ -119,10 +119,7 @@ export async function updateEndpoint(
     notification_cooldown_seconds?: number;
     send_recovery_notifications?: boolean;
     escalation_interval_minutes?: number | null;
-    slug?: string | null;
-    is_public?: boolean;
-    public_title?: string | null;
-    public_description?: string | null;
+
   }
 ) {
   const supabase = await createClient();
@@ -138,10 +135,7 @@ export async function updateEndpoint(
         notification_cooldown_seconds: data.notification_cooldown_seconds,
         send_recovery_notifications: data.send_recovery_notifications,
         escalation_interval_minutes: data.escalation_interval_minutes,
-        slug: data.slug,
-        is_public: data.is_public,
-        public_title: data.public_title,
-        public_description: data.public_description,
+
       })
       .eq("id", endpointId);
 

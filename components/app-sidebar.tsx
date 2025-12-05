@@ -21,6 +21,11 @@ const navItems = [
     href: "/protected/profile",
     icon: User,
   },
+  {
+    title: "Status Pages",
+    href: "/protected/status-pages",
+    icon: Activity,
+  },
 ];
 
 export function AppSidebar() {
