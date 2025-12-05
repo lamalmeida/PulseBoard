@@ -41,6 +41,12 @@ export function AddEndpointForm() {
   const [recovery, setRecovery] = useState(true);
   const [escalation, setEscalation] = useState("0");
 
+  // Status Page settings
+  const [isPublic, setIsPublic] = useState(false);
+  const [slug, setSlug] = useState("");
+  const [publicTitle, setPublicTitle] = useState("");
+  const [publicDescription, setPublicDescription] = useState("");
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -109,6 +115,10 @@ export function AddEndpointForm() {
           notification_cooldown_seconds: parseInt(cooldown),
           send_recovery_notifications: recovery,
           escalation_interval_minutes: parseInt(escalation) > 0 ? parseInt(escalation) : null,
+          slug: isPublic ? (slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")) : null,
+          is_public: isPublic,
+          public_title: isPublic ? publicTitle : null,
+          public_description: isPublic ? publicDescription : null,
         })
         .select()
         .single();
@@ -128,6 +138,10 @@ export function AddEndpointForm() {
       setCooldown("3600");
       setRecovery(true);
       setEscalation("0");
+      setIsPublic(false);
+      setSlug("");
+      setPublicTitle("");
+      setPublicDescription("");
 
       // Redirect to endpoints list
       router.push("/protected/endpoints");
@@ -299,12 +313,77 @@ export function AddEndpointForm() {
               </div>
             </div>
 
+
+            <div className="border-t pt-4 mt-2">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-medium">Status Page Settings</h4>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isPublic"
+                    checked={isPublic}
+                    onChange={(e) => setIsPublic(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <Label htmlFor="isPublic" className="font-normal">
+                    Enable Public Status Page
+                  </Label>
+                </div>
+              </div>
+
+              {isPublic && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="grid gap-2">
+                    <Label htmlFor="slug">
+                      Slug (URL)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        pulseboard.lamas-co.com/status/
+                      </span>
+                      <Input
+                        id="slug"
+                        value={slug}
+                        onChange={(e) => setSlug(e.target.value)}
+                        placeholder={name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+                        className="font-mono"
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="publicTitle">Page Title</Label>
+                    <Input
+                      id="publicTitle"
+                      value={publicTitle}
+                      onChange={(e) => setPublicTitle(e.target.value)}
+                      placeholder="e.g. API Status"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="publicDescription">Description</Label>
+                    <Input
+                      id="publicDescription"
+                      value={publicDescription}
+                      onChange={(e) => setPublicDescription(e.target.value)}
+                      placeholder="Brief description for the public page"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Adding..." : "Add Endpoint"}
             </Button>
           </div>
         </form>
       </CardContent>
-    </Card>
+    </Card >
   );
 }

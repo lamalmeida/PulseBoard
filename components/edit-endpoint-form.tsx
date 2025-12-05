@@ -30,6 +30,11 @@ type EditEndpointFormProps = {
         notification_cooldown_seconds?: number;
         send_recovery_notifications?: boolean;
         escalation_interval_minutes?: number;
+
+        slug?: string;
+        is_public?: boolean;
+        public_title?: string;
+        public_description?: string;
     };
 };
 
@@ -41,6 +46,13 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
     const [cooldown, setCooldown] = useState((endpoint.notification_cooldown_seconds || 3600).toString());
     const [recovery, setRecovery] = useState(endpoint.send_recovery_notifications ?? true);
     const [escalation, setEscalation] = useState((endpoint.escalation_interval_minutes || 0).toString());
+
+    // Status Page State
+    const [isPublic, setIsPublic] = useState(endpoint.is_public || false);
+    const [slug, setSlug] = useState(endpoint.slug || "");
+    const [publicTitle, setPublicTitle] = useState(endpoint.public_title || "");
+    const [publicDescription, setPublicDescription] = useState(endpoint.public_description || "");
+
     const [isLoading, setIsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<"toggle" | "delete" | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -71,7 +83,12 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                 consecutive_failures_threshold: parseInt(sensitivity),
                 notification_cooldown_seconds: parseInt(cooldown),
                 send_recovery_notifications: recovery,
+
                 escalation_interval_minutes: parseInt(escalation) > 0 ? parseInt(escalation) : null,
+                slug: isPublic ? (slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")) : null,
+                is_public: isPublic,
+                public_title: isPublic ? publicTitle : null,
+                public_description: isPublic ? publicDescription : null,
             });
 
             if (result.success) {
@@ -277,6 +294,84 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                                         </Label>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="border-t pt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-sm font-medium">Status Page Settings</h4>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="isPublic"
+                                            checked={isPublic}
+                                            onChange={(e) => setIsPublic(e.target.checked)}
+                                            disabled={isLoading || !!actionLoading}
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <Label htmlFor="isPublic" className="font-normal">
+                                            Enable Public Status Page
+                                        </Label>
+                                    </div>
+                                </div>
+
+                                {isPublic && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        {endpoint.slug && (
+                                            <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                                                <span className="text-muted-foreground">Public Link:</span>
+                                                <a
+                                                    href={`/status/${endpoint.slug}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-primary hover:underline truncate"
+                                                >
+                                                    {window.location.origin}/status/{endpoint.slug}
+                                                </a>
+                                            </div>
+                                        )}
+
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="slug">
+                                                Slug (URL)
+                                            </Label>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                                    pulseboard.lamas-co.com/status/
+                                                </span>
+                                                <Input
+                                                    id="slug"
+                                                    value={slug}
+                                                    onChange={(e) => setSlug(e.target.value)}
+                                                    placeholder={name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+                                                    className="font-mono"
+                                                    disabled={isLoading || !!actionLoading}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="publicTitle">Page Title</Label>
+                                            <Input
+                                                id="publicTitle"
+                                                value={publicTitle}
+                                                onChange={(e) => setPublicTitle(e.target.value)}
+                                                placeholder="e.g. API Status"
+                                                disabled={isLoading || !!actionLoading}
+                                            />
+                                        </div>
+
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="publicDescription">Description</Label>
+                                            <Input
+                                                id="publicDescription"
+                                                value={publicDescription}
+                                                onChange={(e) => setPublicDescription(e.target.value)}
+                                                placeholder="Brief description for the public page"
+                                                disabled={isLoading || !!actionLoading}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {error && (
