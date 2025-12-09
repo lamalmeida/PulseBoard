@@ -114,12 +114,14 @@ export async function updateEndpoint(
   data: {
     name: string;
     url: string;
+    http_method?: string;
+    request_head?: Record<string, string>;
+    request_body?: string;
     check_interval: number;
     consecutive_failures_threshold?: number;
     notification_cooldown_seconds?: number;
     send_recovery_notifications?: boolean;
     escalation_interval_minutes?: number | null;
-
   }
 ) {
   const supabase = await createClient();
@@ -130,12 +132,14 @@ export async function updateEndpoint(
       .update({
         name: data.name.trim(),
         url: data.url.trim(),
+        http_method: data.http_method,
+        request_head: data.request_head,
+        request_body: data.request_body,
         check_interval: data.check_interval,
         consecutive_failures_threshold: data.consecutive_failures_threshold,
         notification_cooldown_seconds: data.notification_cooldown_seconds,
         send_recovery_notifications: data.send_recovery_notifications,
         escalation_interval_minutes: data.escalation_interval_minutes,
-
       })
       .eq("id", endpointId);
 

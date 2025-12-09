@@ -25,9 +25,14 @@ import { updateQStashSchedule } from "@/app/actions/update-qstash-schedule";
 import { validateEndpointCreation } from "@/app/actions/rate-limits";
 import { toast } from "@/lib/toast";
 
+import { Plus, Trash2 } from "lucide-react";
+
 export function AddEndpointForm() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [httpMethod, setHttpMethod] = useState("GET");
+  const [headers, setHeaders] = useState<{ key: string; value: string }[]>([]);
+  const [body, setBody] = useState("");
   const [interval, setInterval] = useState("3600"); // 1 hour default
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
@@ -40,8 +45,6 @@ export function AddEndpointForm() {
   const [cooldown, setCooldown] = useState("3600");
   const [recovery, setRecovery] = useState(true);
   const [escalation, setEscalation] = useState("0");
-
-
 
   const router = useRouter();
   const supabase = createClient();
@@ -68,6 +71,20 @@ export function AddEndpointForm() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const addHeader = () => {
+    setHeaders([...headers, { key: "", value: "" }]);
+  };
+
+  const removeHeader = (index: number) => {
+    setHeaders(headers.filter((_, i) => i !== index));
+  };
+
+  const updateHeader = (index: number, field: "key" | "value", value: string) => {
+    const newHeaders = [...headers];
+    newHeaders[index][field] = value;
+    setHeaders(newHeaders);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,6 +115,14 @@ export function AddEndpointForm() {
         return;
       }
 
+      // Process headers into a single object
+      const headersObject = headers.reduce((acc, header) => {
+        if (header.key.trim()) {
+          acc[header.key.trim()] = header.value;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
       // Insert the endpoint into Supabase
       const { data, error: insertError } = await supabase
         .from("endpoints")
@@ -105,13 +130,15 @@ export function AddEndpointForm() {
           user_id: user.id,
           name: name.trim(),
           url: url.trim(),
+          http_method: httpMethod,
+          request_head: headersObject,
+          request_body: body,
           check_interval: intervalSeconds,
           is_active: true,
           consecutive_failures_threshold: parseInt(sensitivity),
           notification_cooldown_seconds: parseInt(cooldown),
           send_recovery_notifications: recovery,
           escalation_interval_minutes: parseInt(escalation) > 0 ? parseInt(escalation) : null,
-
         })
         .select()
         .single();
@@ -126,12 +153,14 @@ export function AddEndpointForm() {
       // Clear form
       setName("");
       setUrl("");
+      setHttpMethod("GET");
+      setHeaders([]);
+      setBody("");
       setInterval("3600");
       setSensitivity("2");
       setCooldown("3600");
       setRecovery(true);
       setEscalation("0");
-
 
       // Redirect to endpoints list
       router.push("/protected/endpoints");
@@ -176,25 +205,104 @@ export function AddEndpointForm() {
               )}
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="url">URL</Label>
-              <Input
-                id="url"
-                type="url"
-                placeholder="https://api.example.com/health"
-                required
-                value={url}
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  if (errors.url) setErrors({ ...errors, url: undefined });
-                }}
-                disabled={isLoading}
-                className={errors.url ? "border-red-500" : ""}
-              />
-              {errors.url && (
-                <p className="text-xs text-red-500 mt-1">{errors.url}</p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="url">URL</Label>
+                <Input
+                  id="url"
+                  type="url"
+                  placeholder="https://api.example.com/health"
+                  required
+                  value={url}
+                  onChange={(e) => {
+                    setUrl(e.target.value);
+                    if (errors.url) setErrors({ ...errors, url: undefined });
+                  }}
+                  disabled={isLoading}
+                  className={errors.url ? "border-red-500" : ""}
+                />
+                {errors.url && (
+                  <p className="text-xs text-red-500 mt-1">{errors.url}</p>
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="method">Method</Label>
+                <Select
+                  value={httpMethod}
+                  onValueChange={setHttpMethod}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="method">
+                    <SelectValue placeholder="Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="DELETE">DELETE</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                    <SelectItem value="OPTIONS">OPTIONS</SelectItem>
+                    <SelectItem value="HEAD">HEAD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            <div className="grid gap-2">
+              <Label>Request Headers (Optional)</Label>
+              <div className="space-y-2">
+                {headers.map((header, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Key (e.g. Content-Type)"
+                      value={header.key}
+                      onChange={(e) => updateHeader(index, "key", e.target.value)}
+                      disabled={isLoading}
+                    />
+                    <Input
+                      placeholder="Value (e.g. application/json)"
+                      value={header.value}
+                      onChange={(e) => updateHeader(index, "value", e.target.value)}
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeHeader(index)}
+                      disabled={isLoading}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addHeader}
+                  disabled={isLoading}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Header
+                </Button>
+              </div>
+            </div>
+
+            {(httpMethod === "POST" || httpMethod === "PUT" || httpMethod === "PATCH" || httpMethod === "DELETE") && (
+              <div className="grid gap-2">
+                <Label htmlFor="body">Request Body (Optional)</Label>
+                <textarea
+                  id="body"
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder='{"key": "value"}'
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="interval">Check Interval (minimum 1 hour)</Label>
@@ -216,6 +324,28 @@ export function AddEndpointForm() {
               <p className="text-xs text-muted-foreground">
                 Minimum check frequency is 1 hour to ensure fair resource usage.
               </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="method">HTTP Method</Label>
+              <Select
+                value={httpMethod}
+                onValueChange={setHttpMethod}
+                disabled={isLoading}
+              >
+                <SelectTrigger id="method">
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GET">GET</SelectItem>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="DELETE">DELETE</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                  <SelectItem value="OPTIONS">OPTIONS</SelectItem>
+                  <SelectItem value="HEAD">HEAD</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="border-t pt-4 mt-2">

@@ -12,10 +12,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Pause, Play, Trash2, Loader2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Loader2, Pause, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { validateCheckInterval } from "@/lib/rate-limits";
-import { toast } from "@/lib/toast";
+import { toast } from "sonner";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
@@ -24,6 +24,9 @@ type EditEndpointFormProps = {
         id: string;
         name: string;
         url: string;
+        http_method?: string;
+        request_head?: Record<string, string>;
+        request_body?: string;
         check_interval: number;
         is_active: boolean;
         consecutive_failures_threshold?: number;
@@ -37,6 +40,15 @@ type EditEndpointFormProps = {
 export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
     const [name, setName] = useState(endpoint.name);
     const [url, setUrl] = useState(endpoint.url);
+    const [httpMethod, setHttpMethod] = useState(endpoint.http_method || "GET");
+
+    // Initialize headers from endpoint.request_head
+    const initialHeaders = endpoint.request_head
+        ? Object.entries(endpoint.request_head).map(([key, value]) => ({ key, value: String(value) }))
+        : [];
+    const [headers, setHeaders] = useState<{ key: string; value: string }[]>(initialHeaders);
+    const [body, setBody] = useState(endpoint.request_body || "");
+
     const [interval, setInterval] = useState(endpoint.check_interval.toString());
     const [sensitivity, setSensitivity] = useState((endpoint.consecutive_failures_threshold || 2).toString());
     const [cooldown, setCooldown] = useState((endpoint.notification_cooldown_seconds || 3600).toString());
@@ -49,6 +61,20 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
     const [actionLoading, setActionLoading] = useState<"toggle" | "delete" | null>(null);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+
+    const addHeader = () => {
+        setHeaders([...headers, { key: "", value: "" }]);
+    };
+
+    const removeHeader = (index: number) => {
+        setHeaders(headers.filter((_, i) => i !== index));
+    };
+
+    const updateHeader = (index: number, field: "key" | "value", value: string) => {
+        const newHeaders = [...headers];
+        newHeaders[index][field] = value;
+        setHeaders(newHeaders);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,9 +94,20 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                 return;
             }
 
+            // Process headers into a single object
+            const headersObject = headers.reduce((acc, header) => {
+                if (header.key.trim()) {
+                    acc[header.key.trim()] = header.value;
+                }
+                return acc;
+            }, {} as Record<string, string>);
+
             const result = await updateEndpoint(endpoint.id, {
                 name,
                 url,
+                http_method: httpMethod,
+                request_head: headersObject,
+                request_body: body,
                 check_interval: intervalSeconds,
                 consecutive_failures_threshold: parseInt(sensitivity),
                 notification_cooldown_seconds: parseInt(cooldown),
@@ -173,18 +210,97 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-url">URL</Label>
-                                    <Input
-                                        id="edit-url"
-                                        type="url"
-                                        placeholder="https://api.example.com/health"
-                                        required
-                                        value={url}
-                                        onChange={(e) => setUrl(e.target.value)}
-                                        disabled={isLoading || !!actionLoading}
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-url">URL</Label>
+                                        <Input
+                                            id="edit-url"
+                                            type="url"
+                                            placeholder="https://api.example.com/health"
+                                            required
+                                            value={url}
+                                            onChange={(e) => setUrl(e.target.value)}
+                                            disabled={isLoading || !!actionLoading}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-method">Method</Label>
+                                        <Select
+                                            value={httpMethod}
+                                            onValueChange={setHttpMethod}
+                                            disabled={isLoading || !!actionLoading}
+                                        >
+                                            <SelectTrigger id="edit-method">
+                                                <SelectValue placeholder="Method" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="GET">GET</SelectItem>
+                                                <SelectItem value="POST">POST</SelectItem>
+                                                <SelectItem value="PUT">PUT</SelectItem>
+                                                <SelectItem value="DELETE">DELETE</SelectItem>
+                                                <SelectItem value="PATCH">PATCH</SelectItem>
+                                                <SelectItem value="OPTIONS">OPTIONS</SelectItem>
+                                                <SelectItem value="HEAD">HEAD</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
+
+                                <div className="grid gap-2">
+                                    <Label>Request Headers (Optional)</Label>
+                                    <div className="space-y-2">
+                                        {headers.map((header, index) => (
+                                            <div key={index} className="flex gap-2">
+                                                <Input
+                                                    placeholder="Key"
+                                                    value={header.key}
+                                                    onChange={(e) => updateHeader(index, "key", e.target.value)}
+                                                    disabled={isLoading || !!actionLoading}
+                                                />
+                                                <Input
+                                                    placeholder="Value"
+                                                    value={header.value}
+                                                    onChange={(e) => updateHeader(index, "value", e.target.value)}
+                                                    disabled={isLoading || !!actionLoading}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => removeHeader(index)}
+                                                    disabled={isLoading || !!actionLoading}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={addHeader}
+                                            disabled={isLoading || !!actionLoading}
+                                            className="mt-2"
+                                        >
+                                            <Plus className="h-4 w-4 mr-2" /> Add Header
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {(httpMethod === "POST" || httpMethod === "PUT" || httpMethod === "PATCH" || httpMethod === "DELETE") && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-body">Request Body (Optional)</Label>
+                                        <textarea
+                                            id="edit-body"
+                                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            placeholder='{"key": "value"}'
+                                            value={body}
+                                            onChange={(e) => setBody(e.target.value)}
+                                            disabled={isLoading || !!actionLoading}
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-interval">Check Interval (minimum 1 hour)</Label>
