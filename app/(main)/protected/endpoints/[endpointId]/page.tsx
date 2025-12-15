@@ -130,8 +130,19 @@ export default async function EndpointDetailPage({
         </div>
       </div>
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error loading endpoint details:", error);
-    redirect("/protected/endpoints");
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-destructive mb-4">Error Loading Endpoint</h1>
+        <p className="text-muted-foreground mb-4">{error.message || "Unknown error occurred"}</p>
+        <pre className="bg-muted p-4 rounded text-left overflow-auto max-w-2xl mx-auto text-xs">
+          {JSON.stringify(error, null, 2)}
+        </pre>
+        <Button asChild className="mt-8">
+          <Link href="/protected/endpoints">Back to List</Link>
+        </Button>
+      </div>
+    );
   }
 }
