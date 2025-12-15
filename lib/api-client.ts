@@ -52,6 +52,10 @@ export class WorkerAPI {
     private static async request<T>(path: string, options: RequestInit = {}): Promise<T> {
         const headers = await this.getHeaders();
         const url = `${API_BASE_URL}${path}`;
+        const method = options.method || 'GET';
+
+        console.log(`[WorkerAPI] Requesting: ${method} ${url}`);
+        console.log(`[WorkerAPI] Base URL: ${API_BASE_URL}`);
 
         try {
             const response = await fetch(url, {

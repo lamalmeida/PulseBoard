@@ -60,8 +60,13 @@ export default async function EndpointsPage() {
         <EndpointsList endpoints={endpointsWithLastCheck || []} />
       </div>
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error loading endpoints:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
     return (
       <div className="flex-1 w-full flex flex-col items-center justify-center gap-4">
         <div className="text-destructive font-semibold">Failed to load endpoints</div>
