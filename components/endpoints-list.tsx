@@ -82,12 +82,10 @@ export function EndpointsList({
     try {
       const result = await checkEndpoint(endpointId);
 
-      if (result.success && result.check) {
-        toast.success(`Check completed for ${result.check.endpoint_id ? 'endpoint' : 'endpoint'}`);
-        setCheckResults((prev) => ({
-          ...prev,
-          [endpointId]: result.check,
-        }));
+      if (result.success) {
+        toast.success("Check triggered successfully");
+        // We don't get the check object back synchronously from the new Worker API trigger
+        // So we just refresh the page to get updated status eventually
         router.refresh();
       } else {
         console.error("Check failed:", result.error);

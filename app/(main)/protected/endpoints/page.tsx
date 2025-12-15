@@ -4,67 +4,69 @@ import { EndpointsList } from "@/components/endpoints-list";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { WorkerAPI } from "@/lib/api-client";
 
 export default async function EndpointsPage() {
   const supabase = await createClient();
 
-  // Check if user is authenticated
+  // Check if user is authenticated (using supabase client for auth check only)
+  // WorkerAPI also checks auth, but we want to redirect if not logged in
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims) {
     redirect("/auth/login");
   }
 
-  // Fetch user's endpoints with their last check
-  const { data: endpoints, error: fetchError } = await supabase
-    .from("endpoints")
-    .select(`
-      *,
-      checks:checks(
-        status,
-        response_time,
-        checked_at
-      )
-    `)
-    .order("created_at", { ascending: false });
+  try {
+    // Fetch user's endpoints
+    const endpoints = await WorkerAPI.getEndpoints();
 
-  if (fetchError) {
-    console.error("Error fetching endpoints:", fetchError);
-  }
+    // Fetch last check for each endpoint to populate status
+    // We run these in parallel
+    const endpointsWithLastCheck = await Promise.all(
+      endpoints.map(async (endpoint: any) => {
+        try {
+          const checks = await WorkerAPI.getChecks(endpoint.id, 1);
+          return {
+            ...endpoint,
+            lastCheck: checks && checks.length > 0 ? checks[0] : null,
+          };
+        } catch (err) {
+          console.error(`Failed to fetch checks for ${endpoint.id}`, err);
+          return {
+            ...endpoint,
+            lastCheck: null,
+          };
+        }
+      })
+    );
 
-  // Transform the data to get only the last check for each endpoint
-  const endpointsWithLastCheck = endpoints?.map((endpoint: any) => {
-    const checks = endpoint.checks || [];
-    const lastCheck = checks.length > 0 
-      ? checks.sort((a: any, b: any) => 
-          new Date(b.checked_at).getTime() - new Date(a.checked_at).getTime()
-        )[0]
-      : null;
-
-    return {
-      ...endpoint,
-      lastCheck,
-      checks: undefined, // Remove the checks array from the object
-    };
-  });
-
-  return (
-    <div className="flex-1 w-full flex flex-col gap-12">
-      <div className="w-full flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Your Endpoints</h1>
-          <p className="text-muted-foreground">
-            Monitor and manage your API endpoints
-          </p>
+    return (
+      <div className="flex-1 w-full flex flex-col gap-12">
+        <div className="w-full flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Your Endpoints</h1>
+            <p className="text-muted-foreground">
+              Monitor and manage your API endpoints
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/protected/endpoints/add">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Endpoint
+            </Link>
+          </Button>
         </div>
-        <Button asChild>
-          <Link href="/protected/endpoints/add">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Endpoint
-          </Link>
-        </Button>
-      </div>
 
-      <EndpointsList endpoints={endpointsWithLastCheck || []} />
-    </div>
-  );
+        <EndpointsList endpoints={endpointsWithLastCheck || []} />
+      </div>
+    );
+  } catch (error) {
+    console.error("Error loading endpoints:", error);
+    return (
+      <div className="flex-1 w-full flex flex-col items-center justify-center gap-4">
+        <div className="text-destructive font-semibold">Failed to load endpoints</div>
+        <p className="text-muted-foreground">Please try again later.</p>
+      </div>
+    );
+  }
 }

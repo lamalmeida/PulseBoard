@@ -21,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { updateQStashSchedule } from "@/app/actions/update-qstash-schedule";
-import { validateEndpointCreation } from "@/app/actions/rate-limits";
+import { createEndpoint } from "@/app/actions/endpoint-actions";
 import { toast } from "@/lib/toast";
 
 import { Plus, Trash2 } from "lucide-react";
@@ -98,23 +97,6 @@ export function AddEndpointForm() {
     setIsLoading(true);
 
     try {
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error("You must be logged in to add an endpoint");
-      }
-
-      // Validate endpoint limit and check interval
-      const intervalSeconds = parseInt(interval);
-      const validation = await validateEndpointCreation(user.id, intervalSeconds);
-
-      if (!validation.valid) {
-        toast.error(validation.error || "Validation failed");
-        setIsLoading(false);
-        return;
-      }
-
       // Process headers into a single object
       const headersObject = headers.reduce((acc, header) => {
         if (header.key.trim()) {
@@ -123,32 +105,30 @@ export function AddEndpointForm() {
         return acc;
       }, {} as Record<string, string>);
 
-      // Insert the endpoint into Supabase
-      const { data, error: insertError } = await supabase
-        .from("endpoints")
-        .insert({
-          user_id: user.id,
-          name: name.trim(),
-          url: url.trim(),
-          http_method: httpMethod,
-          request_head: headersObject,
-          request_body: body,
-          check_interval: intervalSeconds,
-          is_active: true,
-          consecutive_failures_threshold: parseInt(sensitivity),
-          notification_cooldown_seconds: parseInt(cooldown),
-          send_recovery_notifications: recovery,
-          escalation_interval_minutes: parseInt(escalation) > 0 ? parseInt(escalation) : null,
-        })
-        .select()
-        .single();
+      const intervalSeconds = parseInt(interval);
 
-      if (insertError) throw insertError;
+      const endpointData = {
+        name: name.trim(),
+        url: url.trim(),
+        http_method: httpMethod,
+        request_head: headersObject,
+        request_body: body,
+        check_interval: intervalSeconds,
+        is_active: true,
+        consecutive_failures_threshold: parseInt(sensitivity),
+        notification_cooldown_seconds: parseInt(cooldown),
+        send_recovery_notifications: recovery,
+        escalation_interval_minutes: parseInt(escalation) > 0 ? parseInt(escalation) : null,
+      };
 
-      console.log("✅ Endpoint created:", data);
+      const result = await createEndpoint(endpointData);
+
+      if (!result.success) {
+        throw new Error(result.error?.message || "Failed to create endpoint");
+      }
+
+      console.log("✅ Endpoint created");
       toast.success(`Endpoint "${name}" created successfully!`);
-
-      await updateQStashSchedule();
 
       // Clear form
       setName("");
@@ -432,9 +412,6 @@ export function AddEndpointForm() {
                 </div>
               </div>
             </div>
-
-
-
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Adding..." : "Add Endpoint"}

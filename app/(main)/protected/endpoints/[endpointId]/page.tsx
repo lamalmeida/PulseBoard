@@ -12,42 +12,17 @@ import { Clock, Globe, ShieldAlert, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-
-// This helper function can live in this file or be moved to utils
-const calculateStats = (checks: any[]) => {
-  if (checks.length === 0) {
-    return { uptime: "N/A", avgResponse: "N/A", totalOffline: 0 };
-  }
-  const successChecks = checks.filter((c) => c.status === "success");
-  const uptime = (successChecks.length / checks.length) * 100;
-  const avgResponse =
-    successChecks.length > 0
-      ? successChecks.reduce((sum, c) => sum + c.response_time, 0) /
-      successChecks.length
-      : 0;
-  const totalOffline = checks.length - successChecks.length;
-
-  return {
-    uptime: `${uptime.toFixed(1)}%`,
-    avgResponse: avgResponse > 0 ? `${Math.round(avgResponse)}ms` : "N/A",
-    totalOffline,
-  };
-};
+import { WorkerAPI } from "@/lib/api-client";
 
 export default async function EndpointDetailPage({
   params: paramsPromise,
 }: {
   params: Promise<{ endpointId: string }> | { endpointId: string };
 }) {
-  // Ensure we have the actual params object, not a Promise
   const params = await Promise.resolve(paramsPromise);
-
-  console.log('EndpointDetailPage params:', params);
   const endpointId = params?.endpointId;
-  console.log('endpointId from params:', endpointId);
 
   if (!endpointId) {
-    console.error('No endpointId found in params');
     redirect('/protected/endpoints');
   }
 
@@ -58,108 +33,105 @@ export default async function EndpointDetailPage({
   if (authError || !authData?.claims) {
     redirect("/auth/login");
   }
-  const userId = authData.claims.sub; // Get user ID from subject claim
 
-  // 2. Fetch Endpoint Details
-  const { data: endpoint, error: endpointError } = await supabase
-    .from("endpoints")
-    .select("*")
-    .eq("id", params.endpointId)
-    .eq("user_id", userId) // Security: ensure user owns this endpoint
-    .single();
+  try {
+    // 2. Fetch Data in Parallel
+    const [endpoint, checks, statsData] = await Promise.all([
+      WorkerAPI.getEndpoint(endpointId),
+      WorkerAPI.getChecks(endpointId, 100), // Fetch last 100 checks for graph/history
+      WorkerAPI.getStats(endpointId),
+    ]);
 
-  // 3. If endpoint not found or not owned, redirect
-  if (endpointError) {
-    console.error("Error fetching endpoint", endpointError);
-    redirect("/protected/endpoints");
-  }
+    if (!endpoint) {
+      redirect("/protected/endpoints");
+    }
 
-  if (!endpoint) {
-    console.error("Endpoint not found:", endpointError);
-    redirect("/protected/endpoints");
-  }
+    const stats = statsData?.data || {
+      uptime_24h: 0,
+      avg_response_time_24h: 0,
+      total_checks_24h: 0,
+      successful_checks_24h: 0,
+    };
 
-  // 4. Fetch All Checks for this endpoint
-  const { data: checks, error: checksError } = await supabase
-    .from("checks")
-    .select("*")
-    .eq("endpoint_id", params.endpointId)
-    .order("checked_at", { ascending: false });
+    // Calculate total offline (failed checks) from the fetched checks for the card
+    // Note: API stats gives 24h stats. For "Total Outages" we might want all time or 24h.
+    // Let's use the count of failed checks in the fetched list (last 100) or calculate from stats if possible.
+    // Stats doesn't explicitly have "failure count" but total - successful.
+    const failures24h = (stats.total_checks_24h || 0) - (stats.successful_checks_24h || 0);
 
-  if (checksError) {
-    console.error("Error fetching checks:", checksError);
-    // Don't redirect, just show an error or empty state
-  }
+    return (
+      <div className="flex-1 w-full flex flex-col gap-8">
+        {/* Header */}
+        <div>
+          <Button asChild variant="outline" size="sm" className="mb-4 gap-2">
+            <Link href="/protected/endpoints">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Endpoints
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold mb-2">{endpoint.name}</h1>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Globe className="h-4 w-4" />
+            <a
+              href={endpoint.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+            >
+              {endpoint.url}
+            </a>
+          </div>
+        </div>
 
-  const stats = calculateStats(checks || []);
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Uptime (24h)
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.uptime_24h}%</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Avg. Response (24h)
+              </CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {stats.avg_response_time_24h > 0 ? `${stats.avg_response_time_24h}ms` : "N/A"}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Outages (24h)</CardTitle>
+              <ShieldAlert className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{failures24h}</div>
+            </CardContent>
+          </Card>
+        </div>
 
-  return (
-    <div className="flex-1 w-full flex flex-col gap-8">
-      {/* Header */}
-      <div>
-        <Button asChild variant="outline" size="sm" className="mb-4 gap-2">
-          <Link href="/protected/endpoints">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Endpoints
-          </Link>
-        </Button>
-        <h1 className="text-3xl font-bold mb-2">{endpoint.name}</h1>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Globe className="h-4 w-4" />
-          <a
-            href={endpoint.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-          >
-            {endpoint.url}
-          </a>
+        {/* Metrics Graph */}
+        <EndpointMetrics checks={checks || []} />
+
+        {/* Full History Table */}
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-4">Check History</h2>
+          <EndpointHistoryTable checks={checks || []} endpointId={endpointId} />
         </div>
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Uptime (All time)
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.uptime}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Avg. Response Time
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.avgResponse}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Outages</CardTitle>
-            <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalOffline}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Metrics Graph */}
-      <EndpointMetrics checks={checks || []} />
-
-      {/* Full History Table */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">Check History</h2>
-        <EndpointHistoryTable checks={checks || []} endpointId={endpointId} />
-      </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error("Error loading endpoint details:", error);
+    redirect("/protected/endpoints");
+  }
 }

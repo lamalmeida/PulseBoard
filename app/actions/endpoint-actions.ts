@@ -1,100 +1,24 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { updateQStashSchedule } from "./update-qstash-schedule";
+import { WorkerAPI, handleApiError } from "@/lib/api-client";
 
-export async function toggleEndpointStatus(endpointId: string) {
-  const supabase = await createClient();
-
+export async function createEndpoint(data: any) {
   try {
-    // Get current endpoint status
-    const { data: endpoint, error: fetchError } = await supabase
-      .from("endpoints")
-      .select("is_active")
-      .eq("id", endpointId)
-      .single();
-
-    if (fetchError || !endpoint) {
+    // 1. Validate limits
+    const existing = await WorkerAPI.getEndpoints();
+    if (existing.length >= 10) {
       return {
         success: false,
         error: {
-          message: "Endpoint not found",
-          code: 'ENDPOINT_NOT_FOUND'
+          message: "You have reached the maximum limit of 10 endpoints.",
+          code: "LIMIT_REACHED"
         }
       };
     }
 
-    // Toggle the status
-    const { error: updateError } = await supabase
-      .from("endpoints")
-      .update({ is_active: !endpoint.is_active })
-      .eq("id", endpointId);
-
-    if (updateError) {
-      return {
-        success: false,
-        error: {
-          message: updateError.message,
-          code: 'UPDATE_FAILED'
-        }
-      };
-    }
-
-    // Update QStash schedule
-    await updateQStashSchedule();
-
-    revalidatePath("/protected/endpoints");
-    return { success: true, is_active: !endpoint.is_active };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: {
-        message: error.message || "Operation failed",
-        code: 'ENDPOINT_UPDATE_FAILED'
-      }
-    };
-  }
-}
-
-export async function deleteEndpoint(endpointId: string) {
-  const supabase = await createClient();
-
-  try {
-    // Delete associated checks first
-    const { error: checksError } = await supabase
-      .from("checks")
-      .delete()
-      .eq("endpoint_id", endpointId);
-
-    if (checksError) {
-      return {
-        success: false,
-        error: {
-          message: checksError.message,
-          code: 'DELETE_CHECKS_FAILED'
-        }
-      };
-    }
-
-    // Delete the endpoint
-    const { error: endpointError } = await supabase
-      .from("endpoints")
-      .delete()
-      .eq("id", endpointId);
-
-    if (endpointError) {
-      return {
-        success: false,
-        error: {
-          message: endpointError.message,
-          code: 'DELETE_ENDPOINT_FAILED'
-        }
-      };
-    }
-
-    // Update QStash schedule
-    await updateQStashSchedule();
+    // 2. Create endpoint
+    await WorkerAPI.createEndpoint(data);
 
     revalidatePath("/protected/endpoints");
     return { success: true };
@@ -103,7 +27,53 @@ export async function deleteEndpoint(endpointId: string) {
       success: false,
       error: {
         message: error.message || "Operation failed",
-        code: 'ENDPOINT_DELETE_FAILED'
+        code: error.code || 'ENDPOINT_CREATE_FAILED'
+      }
+    };
+  }
+}
+
+export async function toggleEndpointStatus(endpointId: string) {
+
+  try {
+    // Get current endpoint status
+    const endpoint = await WorkerAPI.getEndpoint(endpointId);
+
+    // Toggle the status
+    const updatedEndpoint = await WorkerAPI.updateEndpoint(endpointId, {
+      is_active: !endpoint.is_active,
+    });
+
+    revalidatePath("/protected/endpoints");
+    return { success: true, is_active: updatedEndpoint.is_active };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: {
+        message: error.message || "Operation failed",
+        code: error.code || 'ENDPOINT_UPDATE_FAILED'
+      }
+    };
+  }
+}
+
+export async function deleteEndpoint(endpointId: string) {
+  try {
+    const result = await WorkerAPI.deleteEndpoint(endpointId);
+
+    if (result.success) {
+      revalidatePath("/protected/endpoints");
+      return { success: true };
+    }
+
+    // Fallback if success isn't explicit but no error thrown
+    return { success: true };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: {
+        message: error.message || "Operation failed",
+        code: error.code || 'ENDPOINT_DELETE_FAILED'
       }
     };
   }
@@ -124,46 +94,22 @@ export async function updateEndpoint(
     escalation_interval_minutes?: number | null;
   }
 ) {
-  const supabase = await createClient();
-
   try {
-    const { error } = await supabase
-      .from("endpoints")
-      .update({
-        name: data.name.trim(),
-        url: data.url.trim(),
-        http_method: data.http_method,
-        request_head: data.request_head,
-        request_body: data.request_body,
-        check_interval: data.check_interval,
-        consecutive_failures_threshold: data.consecutive_failures_threshold,
-        notification_cooldown_seconds: data.notification_cooldown_seconds,
-        send_recovery_notifications: data.send_recovery_notifications,
-        escalation_interval_minutes: data.escalation_interval_minutes,
-      })
-      .eq("id", endpointId);
-
-    if (error) {
-      return {
-        success: false,
-        error: {
-          message: error.message,
-          code: 'UPDATE_FAILED'
-        }
-      };
-    }
-
-    // Update QStash schedule
-    await updateQStashSchedule();
+    await WorkerAPI.updateEndpoint(endpointId, {
+      ...data,
+      name: data.name.trim(),
+      url: data.url.trim(),
+    });
 
     revalidatePath("/protected/endpoints");
+    revalidatePath(`/protected/endpoints/${endpointId}`);
     return { success: true };
   } catch (error: any) {
     return {
       success: false,
       error: {
         message: error.message || "Operation failed",
-        code: 'ENDPOINT_UPDATE_FAILED'
+        code: error.code || 'ENDPOINT_UPDATE_FAILED'
       }
     };
   }
