@@ -25,7 +25,7 @@ type EditEndpointFormProps = {
         name: string;
         url: string;
         http_method?: string;
-        request_head?: Record<string, string>;
+        request_headers?: Record<string, string>;
         request_body?: string;
         check_interval: number;
         is_active: boolean;
@@ -43,8 +43,8 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
     const [httpMethod, setHttpMethod] = useState(endpoint.http_method || "GET");
 
     // Initialize headers from endpoint.request_head
-    const initialHeaders = endpoint.request_head
-        ? Object.entries(endpoint.request_head).map(([key, value]) => ({ key, value: String(value) }))
+    const initialHeaders = endpoint.request_headers
+        ? Object.entries(endpoint.request_headers).map(([key, value]) => ({ key, value: String(value) }))
         : [];
     const [headers, setHeaders] = useState<{ key: string; value: string }[]>(initialHeaders);
     const [body, setBody] = useState(endpoint.request_body || "");
@@ -106,7 +106,7 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                 name,
                 url,
                 http_method: httpMethod,
-                request_head: headersObject,
+                request_headers: headersObject,
                 request_body: body,
                 check_interval: intervalSeconds,
                 consecutive_failures_threshold: parseInt(sensitivity),

@@ -92,7 +92,7 @@ export async function updateEndpoint(
     name: string;
     url: string;
     http_method?: string;
-    request_head?: Record<string, string>;
+    request_headers?: Record<string, string>;
     request_body?: string;
     check_interval: number;
     consecutive_failures_threshold?: number;

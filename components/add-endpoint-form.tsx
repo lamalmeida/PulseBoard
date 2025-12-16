@@ -111,7 +111,7 @@ export function AddEndpointForm() {
         name: name.trim(),
         url: url.trim(),
         http_method: httpMethod,
-        request_head: headersObject,
+        request_headers: headersObject,
         request_body: body,
         check_interval: intervalSeconds,
         is_active: true,
