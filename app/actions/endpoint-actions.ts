@@ -18,7 +18,14 @@ export async function createEndpoint(data: any) {
     }
 
     // 2. Create endpoint
-    await WorkerAPI.createEndpoint(data);
+    // Map minutes (which are actually seconds from form) to seconds column
+    const { escalation_interval_minutes, ...rest } = data;
+    const payload = {
+      ...rest,
+      escalation_interval_seconds: escalation_interval_minutes,
+    };
+
+    await WorkerAPI.createEndpoint(payload);
 
     revalidatePath("/protected/endpoints");
     return { success: true };
@@ -95,11 +102,16 @@ export async function updateEndpoint(
   }
 ) {
   try {
-    await WorkerAPI.updateEndpoint(endpointId, {
-      ...data,
+    const { escalation_interval_minutes, ...rest } = data;
+
+    const payload = {
+      ...rest,
       name: data.name.trim(),
       url: data.url.trim(),
-    });
+      escalation_interval_seconds: escalation_interval_minutes
+    };
+
+    await WorkerAPI.updateEndpoint(endpointId, payload);
 
     revalidatePath("/protected/endpoints");
     revalidatePath(`/protected/endpoints/${endpointId}`);
