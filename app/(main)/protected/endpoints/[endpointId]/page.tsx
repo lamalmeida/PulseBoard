@@ -46,7 +46,7 @@ export default async function EndpointDetailPage({
       redirect("/protected/endpoints");
     }
 
-    const stats = statsData?.data || {
+    const stats = statsData || {
       uptime_24h: 0,
       avg_response_time_24h: 0,
       total_checks_24h: 0,
