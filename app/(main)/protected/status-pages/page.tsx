@@ -5,6 +5,8 @@ import { getStatusPages } from "@/app/actions/status-page-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = 'force-dynamic';
+
 export default async function StatusPagesList() {
     const statusPages = await getStatusPages();
 

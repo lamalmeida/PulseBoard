@@ -1,6 +1,8 @@
 import { WorkerAPI } from "@/lib/api-client";
 import { StatusPageForm } from "@/components/status-page-form";
 
+export const dynamic = 'force-dynamic';
+
 async function getEndpoints() {
     try {
         const endpoints = await WorkerAPI.getEndpoints();
