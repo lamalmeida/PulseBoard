@@ -35,7 +35,13 @@ export async function handleApiError(error: unknown): Promise<never> {
 const API_BASE_URL = process.env.NEXT_PUBLIC_PULSEBOARD_API_URL || process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:3001";
 
 export class WorkerAPI {
-    private static async getHeaders() {
+    private static async getHeaders(requiresAuth = true) {
+        if (!requiresAuth) {
+            return {
+                "Content-Type": "application/json",
+            };
+        }
+
         const supabase = await createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -49,8 +55,8 @@ export class WorkerAPI {
         };
     }
 
-    private static async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-        const headers = await this.getHeaders();
+    private static async request<T>(path: string, options: RequestInit = {}, requiresAuth = true): Promise<T> {
+        const headers = await this.getHeaders(requiresAuth);
         const url = `${API_BASE_URL}${path}`;
         const method = options.method || 'GET';
 
@@ -134,6 +140,39 @@ export class WorkerAPI {
     // Notifications
     static async getNotifications(limit = 50) {
         return this.request<any[]>(`/api/notifications?limit=${limit}`);
+    }
+
+    // Status Pages
+    static async getStatusPages() {
+        return this.request<any[]>("/api/status-pages");
+    }
+
+    static async createStatusPage(data: any) {
+        return this.request<any>("/api/status-pages", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async getStatusPage(id: string) {
+        return this.request<any>(`/api/status-pages/${id}`);
+    }
+
+    static async getPublicStatusPage(slug: string) {
+        return this.request<any>(`/api/status-pages/public/${slug}`, {}, false);
+    }
+
+    static async updateStatusPage(id: string, data: any) {
+        return this.request<any>(`/api/status-pages/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async deleteStatusPage(id: string) {
+        return this.request<{ success: boolean }>(`/api/status-pages/${id}`, {
+            method: "DELETE",
+        });
     }
 }
 

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { WorkerAPI } from "@/lib/api-client";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
@@ -8,25 +8,25 @@ import Image from "next/image";
 
 export default async function StatusPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const supabase = await createClient();
 
-    // 1. Fetch Status Page
-    const { data: statusPage } = await supabase
-        .from("status_pages")
-        .select("*, status_page_endpoints(endpoint_id)")
-        .eq("slug", slug)
-        .eq("is_public", true)
-        .single();
-
-    if (!statusPage) {
+    // 1. Fetch Status Page (Public) via Worker API
+    let statusPageData;
+    try {
+        statusPageData = await WorkerAPI.getPublicStatusPage(slug);
+    } catch (error) {
+        console.error("Error fetching status page:", error);
         notFound();
     }
 
-    // 2. Fetch Endpoints Details
-    const endpointIds = statusPage.status_page_endpoints.map((spe: any) => spe.endpoint_id);
+    if (!statusPageData) {
+        notFound();
+    }
 
-    if (endpointIds.length === 0) {
-        // Handle empty status page
+    const { endpoints, ...statusPage } = statusPageData;
+    const endpointsWithChecks = endpoints || [];
+
+    // 2. Handle empty status page
+    if (endpointsWithChecks.length === 0) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center">
@@ -37,37 +37,8 @@ export default async function StatusPage({ params }: { params: Promise<{ slug: s
         );
     }
 
-    const { data: endpoints } = await supabase
-        .from("endpoints")
-        .select("id, name, url")
-        .in("id", endpointIds)
-        .order("name");
-
-    // 3. Fetch Checks for all endpoints
-    // We want the last 90 checks for each endpoint.
-    // Doing this efficienty in one query is tricky in Supabase without a stored procedure for lateral joins.
-    // We will iterate and fetch in parallel for now (assuming low number of endpoints per page).
-
-    const endpointsWithChecks = await Promise.all(
-        (endpoints || []).map(async (endpoint) => {
-            const { data: checks } = await supabase
-                .from("checks")
-                .select("id, status, response_time, checked_at")
-                .eq("endpoint_id", endpoint.id)
-                .order("checked_at", { ascending: false })
-                .limit(90);
-
-            return {
-                ...endpoint,
-                checks: checks ? [...checks].reverse() : [],
-                latestCheck: checks?.[0]
-            };
-        })
-    );
-
-    // 4. Calculate Overall Status
-    const anyDown = endpointsWithChecks.some(e => e.latestCheck?.status === "error");
-    const anyIssues = endpointsWithChecks.some(e => e.latestCheck?.status === "error" || !e.latestCheck); // Consider empty checks as unknown/issue? Maybe not.
+    // 3. Calculate Overall Status
+    const anyDown = endpointsWithChecks.some((e: any) => e.latestCheck?.status === "error");
     const isSystemOperational = !anyDown;
 
     return (
@@ -116,8 +87,8 @@ export default async function StatusPage({ params }: { params: Promise<{ slug: s
                     )}
 
                     <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border ${isSystemOperational
-                            ? 'bg-green-500/5 text-green-600 border-green-500/20'
-                            : 'bg-red-500/5 text-red-600 border-red-500/20'
+                        ? 'bg-green-500/5 text-green-600 border-green-500/20'
+                        : 'bg-red-500/5 text-red-600 border-red-500/20'
                         }`}>
                         <span className={`w-2 h-2 rounded-full ${isSystemOperational ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
                         {isSystemOperational ? 'All Systems Operational' : 'Active Incidents Reported'}
@@ -127,11 +98,11 @@ export default async function StatusPage({ params }: { params: Promise<{ slug: s
                 {/* Endpoints List */}
                 <div className="space-y-6">
                     <h2 className="text-xl font-semibold">System Metrics</h2>
-                    {endpointsWithChecks.map((endpoint) => {
+                    {endpointsWithChecks.map((endpoint: any) => {
                         const totalChecks = endpoint.checks.length;
-                        const successCount = endpoint.checks.filter(c => c.status === "success").length;
+                        const successCount = endpoint.checks.filter((c: any) => c.status === "success").length;
                         const uptime = totalChecks > 0 ? ((successCount / totalChecks) * 100).toFixed(1) : "100";
-                        const isUp = endpoint.latestCheck?.status === "success" || !endpoint.latestCheck; // Default to up if no checks? Or unknown.
+                        const isUp = endpoint.latestCheck?.status === "success" || !endpoint.latestCheck;
 
                         return (
                             <Card key={endpoint.id}>
@@ -148,7 +119,7 @@ export default async function StatusPage({ params }: { params: Promise<{ slug: s
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex items-end gap-[2px] h-12 w-full">
-                                        {endpoint.checks.map((check) => {
+                                        {endpoint.checks.map((check: any) => {
                                             let colorClass = "bg-muted";
                                             if (check.status === "success") colorClass = "bg-green-500";
                                             if (check.status === "error") colorClass = "bg-red-500";

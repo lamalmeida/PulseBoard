@@ -1,18 +1,14 @@
-import { createClient } from "@/lib/supabase/server";
+import { WorkerAPI } from "@/lib/api-client";
 import { StatusPageForm } from "@/components/status-page-form";
 
 async function getEndpoints() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    const { data } = await supabase
-        .from("endpoints")
-        .select("id, name, url")
-        .eq("user_id", user.id)
-        .order("name");
-
-    return data || [];
+    try {
+        const endpoints = await WorkerAPI.getEndpoints();
+        return endpoints || [];
+    } catch (error) {
+        console.error("Error fetching endpoints:", error);
+        return [];
+    }
 }
 
 export default async function CreateStatusPage() {

@@ -114,3 +114,12 @@ export async function updateEndpoint(
     };
   }
 }
+
+export async function getEndpointCount() {
+  try {
+    const endpoints = await WorkerAPI.getEndpoints();
+    return endpoints.length;
+  } catch (error) {
+    return 0;
+  }
+}
