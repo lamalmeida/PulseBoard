@@ -129,9 +129,10 @@ export async function updateEndpoint(
 
 export async function getEndpointCount() {
   try {
-    const endpoints = await WorkerAPI.getEndpoints();
-    return endpoints.length;
+    const stats = await WorkerAPI.getGlobalStats();
+    return stats.active_endpoints;
   } catch (error) {
+    console.error("Failed to fetch endpoint count:", error);
     return 0;
   }
 }

@@ -174,5 +174,10 @@ export class WorkerAPI {
             method: "DELETE",
         });
     }
+
+    // Stats
+    static async getGlobalStats() {
+        return this.request<{ active_endpoints: number }>("/api/stats/global", {}, false);
+    }
 }
 
