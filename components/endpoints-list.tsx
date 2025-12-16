@@ -14,7 +14,7 @@ import {
   Pencil,
   Search,
 } from "lucide-react";
-import { checkEndpoint } from "@/app/actions/check-endpoint";
+import { triggerCheck } from "@/app/actions/endpoint-actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import React from "react";
@@ -80,7 +80,7 @@ export function EndpointsList({
 
     setCheckingId(endpointId);
     try {
-      const result = await checkEndpoint(endpointId);
+      const result = await triggerCheck(endpointId);
 
       if (result.success) {
         toast.success("Check triggered successfully");

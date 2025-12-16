@@ -123,3 +123,20 @@ export async function getEndpointCount() {
     return 0;
   }
 }
+
+export async function triggerCheck(endpointId: string) {
+  try {
+    await WorkerAPI.triggerCheck(endpointId);
+    revalidatePath("/protected/endpoints");
+    revalidatePath(`/protected/endpoints/${endpointId}`);
+    return { success: true };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: {
+        message: error.message || "Operation failed",
+        code: error.code || 'ENDPOINT_CHECK_FAILED'
+      }
+    };
+  }
+}

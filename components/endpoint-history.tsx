@@ -2,7 +2,7 @@
 
 import { Check, X, Clock, Activity, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { checkEndpoint } from "@/app/actions/check-endpoint";
+import { triggerCheck } from "@/app/actions/endpoint-actions";
 import { useState } from "react";
 import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
@@ -46,7 +46,7 @@ export function EndpointHistoryTable({
 
     setIsChecking(true);
     try {
-      const result = await checkEndpoint(endpointId);
+      const result = await triggerCheck(endpointId);
 
       if (result.success) {
         toast.success("Check completed successfully");
@@ -153,10 +153,10 @@ export function EndpointHistoryTable({
                       </div>
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${check.status === 'success'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                            : check.status === 'error'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                          : check.status === 'error'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
                           }`}
                       >
                         {check.status}

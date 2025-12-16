@@ -35,7 +35,7 @@ export async function handleApiError(error: unknown): Promise<never> {
 const API_BASE_URL = process.env.NEXT_PUBLIC_PULSEBOARD_API_URL || process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:3001";
 
 export class WorkerAPI {
-    private static async getHeaders(requiresAuth = true) {
+    private static async getHeaders(requiresAuth = true): Promise<Record<string, string>> {
         if (!requiresAuth) {
             return {
                 "Content-Type": "application/json",
@@ -55,7 +55,7 @@ export class WorkerAPI {
         };
     }
 
-    private static async request<T>(path: string, options: RequestInit = {}, requiresAuth = true): Promise<T> {
+    private static async request<T>(path: string, options: Omit<RequestInit, 'headers'> & { headers?: Record<string, string> } = {}, requiresAuth = true): Promise<T> {
         const headers = await this.getHeaders(requiresAuth);
         const url = `${API_BASE_URL}${path}`;
         const method = options.method || 'GET';
