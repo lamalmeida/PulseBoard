@@ -2,22 +2,22 @@
 
 import { useState } from "react";
 import { updateEndpoint, toggleEndpointStatus, deleteEndpoint } from "@/app/actions/endpoint-actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/ui/atoms/button";
+import { Input } from "@/ui/atoms/input";
+import { Label } from "@/ui/atoms/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/ui/atoms/select";
 import { Plus, Trash2, ArrowLeft, Loader2, Pause, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { validateCheckInterval } from "@/lib/rate-limits";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/atoms/card";
 
 type EditEndpointFormProps = {
     endpoint: {

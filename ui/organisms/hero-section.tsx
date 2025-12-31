@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getEndpointCount } from "@/app/actions/endpoint-actions";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/atoms/button";
 
 export function HeroSection() {
     const [currentWordIndex, setCurrentWordIndex] = useState(0);

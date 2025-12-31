@@ -5,12 +5,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { EndpointHistoryTable } from "@/components/endpoint-history";
-import { EndpointMetrics } from "@/components/endpoint-metrics";
+} from "@/ui/atoms/card";
+import { EndpointHistoryTable } from "@/ui/molecules/endpoint-history";
+import { EndpointMetrics } from "@/ui/molecules/endpoint-metrics";
 import { Clock, Globe, ShieldAlert, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/atoms/button";
 import { ArrowLeft } from "lucide-react";
 import { WorkerAPI } from "@/lib/api-client";
 

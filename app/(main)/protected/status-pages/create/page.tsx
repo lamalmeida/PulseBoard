@@ -1,5 +1,5 @@
 import { WorkerAPI } from "@/lib/api-client";
-import { StatusPageForm } from "@/components/status-page-form";
+import { StatusPageForm } from "@/ui/organisms/status-page-form";
 
 export const dynamic = 'force-dynamic';
 

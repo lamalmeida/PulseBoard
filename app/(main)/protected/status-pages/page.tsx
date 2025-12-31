@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/atoms/button";
 import { Plus, ExternalLink, Pencil } from "lucide-react";
 import Link from "next/link";
 import { getStatusPages } from "@/app/actions/status-page-actions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/ui/atoms/card";
+import { Badge } from "@/ui/atoms/badge";
 
 export const dynamic = 'force-dynamic';
 

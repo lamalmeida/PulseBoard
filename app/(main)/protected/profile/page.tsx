@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/ui/atoms/card";
 
 export default async function ProfilePage() {
   const supabase = await createClient();

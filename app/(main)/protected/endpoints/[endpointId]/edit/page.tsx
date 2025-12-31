@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
-import { EditEndpointForm } from "@/components/edit-endpoint-form";
+import { EditEndpointForm } from "@/ui/organisms/edit-endpoint-form";
 
 export default async function EditEndpointPage({
     params,

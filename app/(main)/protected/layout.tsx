@@ -1,6 +1,6 @@
-import { AuthButton } from "@/components/auth-button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AuthButton } from "@/ui/molecules/auth-button";
+import { ThemeSwitcher } from "@/ui/molecules/theme-switcher";
+import { AppSidebar } from "@/ui/organisms/app-sidebar";
 import Link from "next/link";
 
 export default function ProtectedLayout({

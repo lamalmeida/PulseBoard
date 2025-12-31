@@ -1,9 +1,9 @@
 import { WorkerAPI } from "@/lib/api-client";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/atoms/card";
 import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/atoms/button";
 import Image from "next/image";
 
 export default async function StatusPage({ params }: { params: Promise<{ slug: string }> }) {

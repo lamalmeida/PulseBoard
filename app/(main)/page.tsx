@@ -1,9 +1,9 @@
 import { Activity, Zap, BarChart3, Bell, Shield, Clock } from "lucide-react";
-import { Navbar } from "@/components/ui/navbar";
-import { HeroSection } from "@/components/ui/hero-section";
-import { FeatureCard } from "@/components/ui/feature-card";
-import { CTASection } from "@/components/ui/cta-section";
-import { Footer } from "@/components/ui/footer";
+import { Navbar } from "@/ui/organisms/navbar";
+import { HeroSection } from "@/ui/organisms/hero-section";
+import { FeatureCard } from "@/ui/molecules/feature-card";
+import { CTASection } from "@/ui/organisms/cta-section";
+import { Footer } from "@/ui/organisms/footer";
 
 export default function NewPage() {
     const features = [

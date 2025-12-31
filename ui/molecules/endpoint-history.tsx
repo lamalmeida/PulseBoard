@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, X, Clock, Activity, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/atoms/button";
 import { triggerCheck } from "@/app/actions/endpoint-actions";
 import { useState } from "react";
 import { toast } from "@/lib/toast";

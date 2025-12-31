@@ -1,5 +1,5 @@
-import { SignUpForm } from "@/components/sign-up-form";
-import { Navbar } from "@/components/ui/navbar";
+import { SignUpForm } from "@/ui/organisms/sign-up-form";
+import { Navbar } from "@/ui/organisms/navbar";
 
 export default function Page() {
   return (

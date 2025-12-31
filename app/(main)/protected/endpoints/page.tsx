@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { EndpointsList } from "@/components/endpoints-list";
+import { EndpointsList } from "@/ui/organisms/endpoints-list";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/atoms/button";
 import { Plus } from "lucide-react";
 import { WorkerAPI } from "@/lib/api-client";
 

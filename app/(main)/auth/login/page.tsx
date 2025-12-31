@@ -1,5 +1,5 @@
-import { LoginForm } from "@/components/login-form";
-import { Navbar } from "@/components/ui/navbar";
+import { LoginForm } from "@/ui/organisms/login-form";
+import { Navbar } from "@/ui/organisms/navbar";
 
 export default function Page() {
   return (

@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/ui/atoms/button";
+import { Input } from "@/ui/atoms/input";
+import { Textarea } from "@/ui/atoms/textarea";
+import { Label } from "@/ui/atoms/label";
+import { Switch } from "@/ui/atoms/switch";
 import { createStatusPage, updateStatusPage } from "@/app/actions/status-page-actions";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/ui/atoms/card";
+import { Checkbox } from "@/ui/atoms/checkbox";
 import { Loader2 } from "lucide-react";
 
 type Endpoint = {

@@ -1,5 +1,5 @@
 import { WorkerAPI } from "@/lib/api-client";
-import { StatusPageForm } from "@/components/status-page-form";
+import { StatusPageForm } from "@/ui/organisms/status-page-form";
 import { getStatusPage } from "@/app/actions/status-page-actions";
 import { notFound } from "next/navigation";
 

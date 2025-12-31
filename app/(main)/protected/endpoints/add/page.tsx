@@ -1,4 +1,4 @@
-import { AddEndpointForm } from "@/components/add-endpoint-form";
+import { AddEndpointForm } from "@/ui/organisms/add-endpoint-form";
 
 export default function AddEndpointPage() {
   return (

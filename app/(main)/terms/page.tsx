@@ -1,5 +1,5 @@
-import { Navbar } from "@/components/ui/navbar";
-import { Footer } from "@/components/ui/footer";
+import { Navbar } from "@/ui/organisms/navbar";
+import { Footer } from "@/ui/organisms/footer";
 
 export default function TermsPage() {
     return (

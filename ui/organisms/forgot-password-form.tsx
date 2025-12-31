@@ -2,9 +2,9 @@
 
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/ui/atoms/button";
+import { Input } from "@/ui/atoms/input";
+import { Label } from "@/ui/atoms/label";
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowUpRight, Mail } from "lucide-react";

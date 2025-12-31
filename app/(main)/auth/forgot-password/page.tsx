@@ -1,5 +1,5 @@
-import { ForgotPasswordForm } from "@/components/forgot-password-form";
-import { Navbar } from "@/components/ui/navbar";
+import { ForgotPasswordForm } from "@/ui/organisms/forgot-password-form";
+import { Navbar } from "@/ui/organisms/navbar";
 
 export default function Page() {
   return (

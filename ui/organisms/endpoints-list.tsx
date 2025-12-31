@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/ui/atoms/badge";
+import { Button } from "@/ui/atoms/button";
 import {
   Activity,
   Loader2,
@@ -25,8 +25,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+} from "@/ui/atoms/select";
+import { Input } from "@/ui/atoms/input";
 import { toast } from "@/lib/toast";
 
 type Endpoint = {
