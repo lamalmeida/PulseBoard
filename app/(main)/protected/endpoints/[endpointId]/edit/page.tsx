@@ -28,7 +28,7 @@ export default async function EditEndpointPage({
 
     return (
         <div className="flex-1 w-full flex flex-col gap-8">
-            <div className="w-full">
+            <div className="w-full pl-12 lg:pl-0">
                 <h1 className="text-3xl font-bold mb-2">Edit Endpoint</h1>
                 <p className="text-muted-foreground">
                     Manage settings for {endpoint.name}

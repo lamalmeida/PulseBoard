@@ -1,6 +1,6 @@
 // lib/rate-limits.ts
 
-const MIN_CHECK_INTERVAL_SECONDS = 3600; // 1 hour
+const MIN_CHECK_INTERVAL_SECONDS = 300; // 5 minutes
 
 export interface RateLimitValidation {
   valid: boolean;

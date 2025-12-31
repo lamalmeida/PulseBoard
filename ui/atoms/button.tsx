@@ -5,36 +5,45 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 border disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 hover:scale-[1.02] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-sm",
-        outline:
-          "border border-input bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125 shadow-sm",
+          "bg-brand text-text-inverse border-transparent shadow-cosmic-button hover:bg-brand-hover hover:shadow-cosmic-button-hover",
+
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm",
-        ghost: "",
-        link: "text-primary underline-offset-4 hover:underline",
-        brand: "bg-brand text-white shadow border-none",
+          "bg-surface-glass text-text-main border-border-subtle backdrop-blur-sm hover:bg-surface-highlight hover:border-brand/50 hover:text-brand",
+
+        ghost:
+          "bg-transparent text-text-muted border-transparent hover:text-text-main hover:bg-surface-highlight",
+
+        destructive:
+          "bg-error-bg text-error border-error-bg hover:bg-error-bg/20",
+
+        outline:
+          "border-border-subtle bg-transparent hover:bg-surface-highlight hover:text-text-main",
+
+        link:
+          "border-transparent bg-transparent text-brand underline-offset-4 hover:underline",
       },
+
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        xl: "h-14 rounded-full px-8 text-lg",
-        icon: "h-9 w-9",
+        sm: "h-8 px-3 text-xs",
+        default: "h-9 px-5 text-sm",
+        lg: "h-11 px-6 text-base",
+        xl: "h-14 px-8 text-lg rounded-xl",
+        icon: "h-9 w-9 p-0",
       },
     },
+
     defaultVariants: {
       variant: "default",
       size: "default",
     },
-  },
+  }
 );
+
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,

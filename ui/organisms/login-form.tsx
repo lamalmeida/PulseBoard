@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/ui/atoms/button";
 import { Input } from "@/ui/atoms/input";
 import { Label } from "@/ui/atoms/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/ui/atoms/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -54,67 +55,72 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <div className="group border border-black/10 dark:border-white/10 p-8 md:p-12 bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold leading-tight mb-2">Login</h2>
-        </div>
+      <Card className="border-brand/20 dark:border-brand/20 bg-surface-base/50">
+        <CardHeader className="p-8 pb-4 border-b-0 bg-transparent">
+          <CardTitle>Welcome back</CardTitle>
+          <CardDescription>Enter your credentials to access your account</CardDescription>
+        </CardHeader>
+
         <form onSubmit={handleLogin}>
-          <div className="flex flex-col gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-transparent border-black/10 dark:border-white/10"
-                />
+          <CardContent className="p-8 pt-4 space-y-6">
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-text-muted">Email</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-text-muted transition-colors group-focus-within:text-brand" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 bg-surface-input border-border-subtle focus:border-brand/50 focus:bg-surface-highlight transition-all"
+                  />
+                </div>
               </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-text-muted">Password</Label>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="ml-auto inline-block text-xs uppercase tracking-wider text-text-muted hover:text-brand transition-colors"
+                  >
+                    Forgot?
+                  </Link>
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-2.5 h-4 w-4 text-text-muted transition-colors group-focus-within:text-brand" />
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 bg-surface-input border-border-subtle focus:border-brand/50 focus:bg-surface-highlight transition-all"
+                  />
+                </div>
+              </div>
+              {error && <p className="text-sm text-error bg-error/10 p-3 rounded border border-error/20">{error}</p>}
+              <Button type="submit" className="w-full group relative overflow-hidden font-bold" size="lg" disabled={isLoading}>
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isLoading ? "Logging in..." : "Sign In"} <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                </span>
+              </Button>
             </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/auth/forgot-password"
-                  className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 bg-transparent border-black/10 dark:border-white/10"
-                />
-              </div>
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full group relative overflow-hidden" size="xl" disabled={isLoading}>
-              <span className="relative z-10 font-medium text-sm flex items-center justify-center gap-2">
-                {isLoading ? "Logging in..." : "Login"} <ArrowUpRight className="w-4 h-4" />
-              </span>
-            </Button>
-          </div>
-          <div className="mt-4 text-center text-sm">
+          </CardContent>
+          <CardFooter className="p-8 pt-0 text-center text-sm text-text-muted justify-center border-t-0 bg-transparent">
             Don&apos;t have an account?{" "}
             <Link
               href="/auth/sign-up"
-              className="underline underline-offset-4"
+              className="text-brand font-medium hover:underline underline-offset-4 ml-1"
             >
               Sign up
             </Link>
-          </div>
+          </CardFooter>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }
+

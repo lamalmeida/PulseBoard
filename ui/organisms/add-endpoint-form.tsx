@@ -14,6 +14,7 @@ import {
 } from "@/ui/atoms/card";
 import { Input } from "@/ui/atoms/input";
 import { Label } from "@/ui/atoms/label";
+import { Slider } from "@/ui/atoms/slider";
 import {
   Select,
   SelectContent,
@@ -32,7 +33,8 @@ export function AddEndpointForm() {
   const [httpMethod, setHttpMethod] = useState("GET");
   const [headers, setHeaders] = useState<{ key: string; value: string }[]>([]);
   const [body, setBody] = useState("");
-  const [interval, setInterval] = useState("3600"); // 1 hour default
+  const [interval, setInterval] = useState<number[]>([300]); // Default 5 mins
+  const [timeout, setTimeout] = useState<number[]>([10]); // Default 10s
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
@@ -86,6 +88,21 @@ export function AddEndpointForm() {
     setHeaders(newHeaders);
   };
 
+  const formatInterval = (seconds: number) => {
+    if (seconds >= 3600) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return minutes > 0
+        ? `${hours}h ${minutes}m`
+        : `${hours} hour${hours > 1 ? 's' : ''}`;
+    }
+    if (seconds >= 60) {
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    }
+    return `${seconds} seconds`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -105,15 +122,14 @@ export function AddEndpointForm() {
         return acc;
       }, {} as Record<string, string>);
 
-      const intervalSeconds = parseInt(interval);
-
       const endpointData = {
         name: name.trim(),
         url: url.trim(),
         http_method: httpMethod,
         request_headers: headersObject,
         request_body: body,
-        check_interval: intervalSeconds,
+        check_interval: interval[0],
+        timeout_sec: timeout[0],
         is_active: true,
         consecutive_failures_threshold: parseInt(sensitivity),
         notification_cooldown_seconds: parseInt(cooldown),
@@ -136,7 +152,8 @@ export function AddEndpointForm() {
       setHttpMethod("GET");
       setHeaders([]);
       setBody("");
-      setInterval("3600");
+      setInterval([300]);
+      setTimeout([10]);
       setSensitivity("2");
       setCooldown("3600");
       setRecovery(true);
@@ -284,48 +301,42 @@ export function AddEndpointForm() {
               </div>
             )}
 
-            <div className="grid gap-2">
-              <Label htmlFor="interval">Check Interval (minimum 1 hour)</Label>
-              <Select
-                value={interval}
-                onValueChange={setInterval}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="interval">
-                  <SelectValue placeholder="Select interval" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3600">Every 1 hour</SelectItem>
-                  <SelectItem value="7200">Every 2 hours</SelectItem>
-                  <SelectItem value="14400">Every 4 hours</SelectItem>
-                  <SelectItem value="86400">Every 24 hours</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Minimum check frequency is 1 hour to ensure fair resource usage.
-              </p>
-            </div>
+            <div className="grid grid-cols-1 gap-8">
+              <div className="grid gap-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="interval">Check Interval</Label>
+                  <span className="text-sm font-medium text-text-main">{formatInterval(interval[0])}</span>
+                </div>
+                <Slider
+                  value={interval}
+                  min={300}
+                  max={86400}
+                  step={300}
+                  onValueChange={setInterval}
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  How often to check endpoint health (5m - 24h).
+                </p>
+              </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="method">HTTP Method</Label>
-              <Select
-                value={httpMethod}
-                onValueChange={setHttpMethod}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="method">
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GET">GET</SelectItem>
-                  <SelectItem value="POST">POST</SelectItem>
-                  <SelectItem value="PUT">PUT</SelectItem>
-                  <SelectItem value="DELETE">DELETE</SelectItem>
-                  <SelectItem value="PATCH">PATCH</SelectItem>
-                  <SelectItem value="OPTIONS">OPTIONS</SelectItem>
-                  <SelectItem value="HEAD">HEAD</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid gap-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="timeout">Request Timeout</Label>
+                  <span className="text-sm font-medium text-text-main">{timeout[0]}s</span>
+                </div>
+                <Slider
+                  value={timeout}
+                  min={1}
+                  max={60}
+                  step={1}
+                  onValueChange={setTimeout}
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Maximum time to wait for a response (1s - 60s).
+                </p>
+              </div>
             </div>
 
             <div className="border-t pt-4 mt-2">

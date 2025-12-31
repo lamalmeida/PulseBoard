@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Home, Plus, User, Activity } from "lucide-react";
+import { Button } from "@/ui/atoms/button";
 
 const navItems = [
   {
@@ -32,33 +33,27 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r bg-muted/40 min-h-screen p-4">
-      <div className="mb-8">
-        <Link href="/protected/endpoints" className="flex items-center gap-2">
-          <Activity className="h-6 w-6" />
-          <span className="font-bold text-xl">PulseBoard</span>
-        </Link>
-      </div>
-
-      <nav className="space-y-2">
+    <aside className="border-r border-border-subtle bg-surface-base backdrop-blur-md h-full p-4">
+      <nav className="flex flex-col gap-2 w-max">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
 
           return (
-            <Link
+            <Button
               key={item.href}
-              href={item.href}
+              variant={isActive ? "secondary" : "ghost"}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                "justify-start w-full",
+                isActive ? "shadow-none bg-surface-glass border-border-subtle" : "text-text-muted hover:text-text-main"
               )}
+              asChild
             >
-              <Icon className="h-4 w-4" />
-              {item.title}
-            </Link>
+              <Link href={item.href}>
+                <Icon className="h-4 w-4 mr-2" />
+                {item.title}
+              </Link>
+            </Button>
           );
         })}
       </nav>

@@ -45,13 +45,51 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        brand: "hsl(var(--brand))",
+
+        // Brand & Design Style Colors
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))",
+          hover: "var(--brand-hover)",
+          glow: "var(--brand-glow)",
+        },
+        surface: {
+          base: 'var(--surface-base)',
+          glass: 'var(--surface-glass)',
+          highlight: 'var(--surface-highlight)',
+          input: 'var(--surface-input)',
+        },
+        // border: { ... } // Can't easily override border key cleanly, so we add custom border colors
+        // We will use semantic names
+        'border-subtle': 'var(--border-subtle)',
+        'border-highlight': 'var(--border-highlight)',
+        'border-focus': 'var(--border-focus)',
+
+        text: {
+          main: 'var(--text-main)',
+          muted: 'var(--text-muted)',
+          dim: 'var(--text-dim)',
+          inverse: 'var(--text-on-brand)',
+        },
+        // Semantic Status Colors
+        success: { DEFAULT: 'var(--color-success)', bg: 'rgba(16, 185, 129, 0.1)' },
+        warning: { DEFAULT: 'var(--color-warning)', bg: 'rgba(245, 158, 11, 0.1)' },
+        error: { DEFAULT: 'var(--color-error)', bg: 'rgba(244, 63, 94, 0.1)' },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-mono)'],
+      },
+      boxShadow: {
+        'cosmic-card': 'var(--shadow-card)',
+        'cosmic-button': 'var(--shadow-button)',
+        'cosmic-button-hover': 'var(--shadow-button-hover)',
+      }
     },
   },
   plugins: [require("tailwindcss-animate")],

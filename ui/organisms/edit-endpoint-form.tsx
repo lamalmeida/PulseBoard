@@ -1,3 +1,4 @@
+// components/edit-endpoint-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -5,6 +6,7 @@ import { updateEndpoint, toggleEndpointStatus, deleteEndpoint } from "@/app/acti
 import { Button } from "@/ui/atoms/button";
 import { Input } from "@/ui/atoms/input";
 import { Label } from "@/ui/atoms/label";
+import { Slider } from "@/ui/atoms/slider";
 import {
     Select,
     SelectContent,
@@ -33,7 +35,7 @@ type EditEndpointFormProps = {
         notification_cooldown_seconds?: number;
         send_recovery_notifications?: boolean;
         escalation_interval_minutes?: number;
-
+        timeout_sec?: number;
     };
 };
 
@@ -49,13 +51,12 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
     const [headers, setHeaders] = useState<{ key: string; value: string }[]>(initialHeaders);
     const [body, setBody] = useState(endpoint.request_body || "");
 
-    const [interval, setInterval] = useState(endpoint.check_interval.toString());
+    const [interval, setInterval] = useState<number[]>([endpoint.check_interval]);
+    const [timeout, setTimeout] = useState<number[]>([endpoint.timeout_sec || 10]);
     const [sensitivity, setSensitivity] = useState((endpoint.consecutive_failures_threshold || 2).toString());
     const [cooldown, setCooldown] = useState((endpoint.notification_cooldown_seconds || 3600).toString());
     const [recovery, setRecovery] = useState(endpoint.send_recovery_notifications ?? true);
     const [escalation, setEscalation] = useState((endpoint.escalation_interval_minutes || 0).toString());
-
-
 
     const [isLoading, setIsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<"toggle" | "delete" | null>(null);
@@ -76,6 +77,21 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
         setHeaders(newHeaders);
     };
 
+    const formatInterval = (seconds: number) => {
+        if (seconds >= 3600) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return minutes > 0
+                ? `${hours}h ${minutes}m`
+                : `${hours} hour${hours > 1 ? 's' : ''}`;
+        }
+        if (seconds >= 60) {
+            const minutes = Math.floor(seconds / 60);
+            return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+        }
+        return `${seconds} seconds`;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -83,7 +99,7 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
 
         try {
             // Validate check interval
-            const intervalSeconds = parseInt(interval);
+            const intervalSeconds = interval[0];
             const validation = validateCheckInterval(intervalSeconds);
 
             if (!validation.valid) {
@@ -109,12 +125,11 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                 request_headers: headersObject,
                 request_body: body,
                 check_interval: intervalSeconds,
+                timeout_sec: timeout[0],
                 consecutive_failures_threshold: parseInt(sensitivity),
                 notification_cooldown_seconds: parseInt(cooldown),
                 send_recovery_notifications: recovery,
-
                 escalation_interval_minutes: parseInt(escalation) > 0 ? parseInt(escalation) : null,
-
             });
 
             if (result.success) {
@@ -201,7 +216,7 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="flex flex-col gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Configuration</CardTitle>
@@ -302,26 +317,42 @@ export function EditEndpointForm({ endpoint }: EditEndpointFormProps) {
                                     </div>
                                 )}
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-interval">Check Interval (minimum 1 hour)</Label>
-                                    <Select
-                                        value={interval}
-                                        onValueChange={setInterval}
-                                        disabled={isLoading || !!actionLoading}
-                                    >
-                                        <SelectTrigger id="edit-interval">
-                                            <SelectValue placeholder="Select interval" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="3600">Every 1 hour</SelectItem>
-                                            <SelectItem value="7200">Every 2 hours</SelectItem>
-                                            <SelectItem value="14400">Every 4 hours</SelectItem>
-                                            <SelectItem value="86400">Every 24 hours</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">
-                                        Minimum check frequency is 1 hour to ensure fair resource usage.
-                                    </p>
+                                <div className="grid grid-cols-1 gap-8">
+                                    <div className="grid gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="edit-interval">Check Interval</Label>
+                                            <span className="text-sm font-medium text-text-main">{formatInterval(interval[0])}</span>
+                                        </div>
+                                        <Slider
+                                            value={interval}
+                                            min={300}
+                                            max={86400}
+                                            step={300}
+                                            onValueChange={setInterval}
+                                            disabled={isLoading || !!actionLoading}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            How often to check endpoint health (5m - 24h).
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="edit-timeout">Request Timeout</Label>
+                                            <span className="text-sm font-medium text-text-main">{timeout[0]}s</span>
+                                        </div>
+                                        <Slider
+                                            value={timeout}
+                                            min={1}
+                                            max={60}
+                                            step={1}
+                                            onValueChange={setTimeout}
+                                            disabled={isLoading || !!actionLoading}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Maximum time to wait for a response (1s - 60s).
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 

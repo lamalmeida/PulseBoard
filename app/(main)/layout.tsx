@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
@@ -17,9 +17,13 @@ export const metadata: Metadata = {
   description: "Monitor the health of your APIs and services",
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
+const inter = Inter({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -39,7 +43,8 @@ export default function RootLayout({
         <meta property="og:url" content="https://pulseboard.lamas-co.com" />
         <meta property="og:type" content="website" />
       </head>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className={`${inter.variable} ${mono.variable} font-sans antialiased bg-background text-foreground transition-colors duration-500`}>
+        <div className="cosmic-grid" />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

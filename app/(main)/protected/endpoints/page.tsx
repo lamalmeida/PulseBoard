@@ -43,7 +43,7 @@ export default async function EndpointsPage() {
     return (
       <div className="flex-1 w-full flex flex-col gap-12">
         <div className="w-full flex justify-between items-center">
-          <div>
+          <div className="pl-12 lg:pl-0">
             <h1 className="text-3xl font-bold mb-2">Your Endpoints</h1>
             <p className="text-muted-foreground">
               Monitor and manage your API endpoints

@@ -23,6 +23,7 @@ export async function createEndpoint(data: any) {
     const payload = {
       ...rest,
       escalation_interval_seconds: escalation_interval_minutes,
+      timeout_sec: data.timeout_sec || 10 // Default to 10s if not provided
     };
 
     await WorkerAPI.createEndpoint(payload);
@@ -99,6 +100,7 @@ export async function updateEndpoint(
     notification_cooldown_seconds?: number;
     send_recovery_notifications?: boolean;
     escalation_interval_minutes?: number | null;
+    timeout_sec?: number;
   }
 ) {
   try {
@@ -108,7 +110,8 @@ export async function updateEndpoint(
       ...rest,
       name: data.name.trim(),
       url: data.url.trim(),
-      escalation_interval_seconds: escalation_interval_minutes
+      escalation_interval_seconds: escalation_interval_minutes,
+      timeout_sec: data.timeout_sec
     };
 
     await WorkerAPI.updateEndpoint(endpointId, payload);

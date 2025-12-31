@@ -1,7 +1,11 @@
 import { AuthButton } from "@/ui/molecules/auth-button";
 import { ThemeSwitcher } from "@/ui/molecules/theme-switcher";
 import { AppSidebar } from "@/ui/organisms/app-sidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/ui/atoms/sheet";
+import { Button } from "@/ui/atoms/button";
+import { Menu } from "lucide-react";
 import Link from "next/link";
+import { Footer } from "@/ui/organisms/footer";
 
 export default function ProtectedLayout({
   children,
@@ -20,33 +24,43 @@ export default function ProtectedLayout({
               <span className="text-lg font-bold tracking-tighter uppercase">PulseBoard</span>
             </Link>
           </div>
-          <AuthButton />
+
+          <div className="flex items-center gap-4">
+            <ThemeSwitcher />
+            <AuthButton />
+          </div>
         </div>
-      </nav>
+      </nav >
 
       {/* Main Content with Sidebar */}
-      <div className="flex flex-1">
-        <AppSidebar />
-        <main className="flex-1 p-8">
+      < div className="flex flex-1" >
+        {/* Desktop Sidebar - hidden below lg */}
+        < div className="hidden lg:block" >
+          <AppSidebar />
+        </div >
+
+        <main className="flex-1 p-8 relative">
+          {/* Mobile Menu Trigger - visible below lg */}
+          <div className="lg:hidden absolute top-8 left-6 z-10">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-[280px]">
+                <AppSidebar />
+              </SheetContent>
+            </Sheet>
+          </div>
+
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
-      </div>
+      </div >
 
       {/* Footer */}
-      <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-8">
-        <p>
-          Powered by{" "}
-          <a
-            href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-            target="_blank"
-            className="font-bold hover:underline"
-            rel="noreferrer"
-          >
-            Supabase
-          </a>
-        </p>
-        <ThemeSwitcher />
-      </footer>
-    </div>
+      < Footer />
+    </div >
   );
 }

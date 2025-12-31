@@ -13,11 +13,21 @@ import {
   ExternalLink,
   Pencil,
   Search,
+  MoreHorizontal,
 } from "lucide-react";
 import { triggerCheck } from "@/app/actions/endpoint-actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/ui/atoms/table";
+import { Card } from "@/ui/atoms/card";
 
 import {
   Select,
@@ -26,6 +36,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/atoms/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/ui/atoms/dropdown-menu";
 import { Input } from "@/ui/atoms/input";
 import { toast } from "@/lib/toast";
 
@@ -138,7 +156,7 @@ export function EndpointsList({
 
     if (!check) {
       return (
-        <Badge variant="secondary" className="gap-1">
+        <Badge variant="neutral" className="gap-1">
           <span className="h-2 w-2 rounded-full bg-gray-400" />
           Unknown
         </Badge>
@@ -148,7 +166,7 @@ export function EndpointsList({
     if (check.status === "success") {
       return (
         <Badge
-          variant="secondary"
+          variant="success"
           className="gap-1 bg-green-500/10 text-green-600 border-green-500/20"
         >
           <span className="h-2 w-2 rounded-full bg-green-500" />
@@ -159,7 +177,7 @@ export function EndpointsList({
 
     return (
       <Badge
-        variant="secondary"
+        variant="error"
         className="gap-1 bg-red-500/10 text-red-600 border-red-500/20"
       >
         <span className="h-2 w-2 rounded-full bg-red-500" />
@@ -301,157 +319,157 @@ export function EndpointsList({
         </div>
       </div>
 
-      <div className="flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 dark:ring-white/10 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300 dark:divide-white/10">
-                <thead className="bg-gray-50 dark:bg-white/5">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                      onClick={() => handleSort("name")}
-                    >
-                      <div className="flex items-center">
-                        Name
-                        <SortIcon columnKey="name" />
-                      </div>
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      Endpoint
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                      onClick={() => handleSort("status")}
-                    >
-                      <div className="flex items-center">
-                        Status
-                        <SortIcon columnKey="status" />
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                      onClick={() => handleSort("last_check")}
-                    >
-                      <div className="flex items-center">
-                        Last Check
-                        <SortIcon columnKey="last_check" />
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                      onClick={() => handleSort("next_check")}
-                    >
-                      <div className="flex items-center">
-                        Next Check
-                        <SortIcon columnKey="next_check" />
-                      </div>
-                    </th>
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-white/10 bg-white dark:bg-transparent">
-                  {sortedAndFilteredEndpoints.length === 0 && !searchQuery && filterStatus === 'all' && (
-                    <tr>
-                      <td colSpan={6} className="text-center py-12 text-muted-foreground">
-                        No endpoints found. Add your first endpoint to get started!
-                      </td>
-                    </tr>
-                  )}
+      <Card className="border-border-subtle bg-surface-base">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-surface-glass border-b border-border-subtle hover:bg-surface-glass">
+                <TableHead
+                  className="px-2 sm:px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-widest cursor-pointer hover:text-text-main transition-colors"
+                  onClick={() => handleSort("name")}
+                >
+                  <div className="flex items-center gap-1">
+                    Name
+                    <SortIcon columnKey="name" />
+                  </div>
+                </TableHead>
+                <TableHead className="px-2 sm:px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-widest hidden xl:table-cell">
+                  URL
+                </TableHead>
+                <TableHead
+                  className="px-2 sm:px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-widest cursor-pointer hover:text-text-main transition-colors"
+                  onClick={() => handleSort("status")}
+                >
+                  <div className="flex items-center gap-1">
+                    Status
+                    <SortIcon columnKey="status" />
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="px-2 sm:px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-widest cursor-pointer hover:text-text-main transition-colors hidden md:table-cell"
+                  onClick={() => handleSort("last_check")}
+                >
+                  <div className="flex items-center gap-1">
+                    Last Check
+                    <SortIcon columnKey="last_check" />
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="px-2 sm:px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-widest cursor-pointer hover:text-text-main transition-colors hidden lg:table-cell"
+                  onClick={() => handleSort("next_check")}
+                >
+                  <div className="flex items-center gap-1">
+                    Next Check
+                    <SortIcon columnKey="next_check" />
+                  </div>
+                </TableHead>
+                <TableHead className="px-2 sm:px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-widest text-right">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedAndFilteredEndpoints.length === 0 && !searchQuery && filterStatus === 'all' && (
+                <TableRow className="border-b border-border-subtle">
+                  <TableCell colSpan={6} className="px-6 py-12 text-center text-text-muted h-32">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Activity className="h-8 w-8 opacity-50" />
+                      <p>No endpoints found. Add your first endpoint to get started!</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
 
-                  {sortedAndFilteredEndpoints.length === 0 && (searchQuery || filterStatus !== 'all') && (
-                    <tr>
-                      <td colSpan={6} className="text-center py-12 text-muted-foreground">
-                        No endpoints match your filters
-                      </td>
-                    </tr>
-                  )}
+              {sortedAndFilteredEndpoints.length === 0 && (searchQuery || filterStatus !== 'all') && (
+                <TableRow className="border-b border-border-subtle">
+                  <TableCell colSpan={6} className="px-6 py-12 text-center text-text-muted h-32">
+                    <p>No endpoints match your filters</p>
+                  </TableCell>
+                </TableRow>
+              )}
 
-                  {sortedAndFilteredEndpoints.map((endpoint) => {
-                    if (!endpoint?.id || endpoint.id === "undefined") return null;
+              {sortedAndFilteredEndpoints.map((endpoint) => {
+                if (!endpoint?.id || endpoint.id === "undefined") return null;
 
-                    const localCheck = checkResults[endpoint.id];
-                    const check = localCheck || endpoint.lastCheck;
-                    const isChecking = checkingId === endpoint.id;
+                const localCheck = checkResults[endpoint.id];
+                const check = localCheck || endpoint.lastCheck;
+                const isChecking = checkingId === endpoint.id;
 
-                    return (
-                      <tr key={endpoint.id} className="even:bg-gray-50 dark:even:bg-white/5">
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-100 sm:pl-6">
-                          {endpoint.name}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                          {endpoint.url}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {getStatusBadge(endpoint)}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {check?.checked_at ? formatRelativeTime(check.checked_at) : "Never"}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {endpoint.is_active ? (
-                            getNextCheckTime(check?.checked_at, endpoint.check_interval)
+                return (
+                  <TableRow key={endpoint.id} className="group hover:bg-surface-highlight transition-colors border-b border-border-subtle">
+                    <TableCell className="px-2 sm:px-4 py-4 font-medium text-text-main max-w-[120px] sm:max-w-[160px] truncate">
+                      {endpoint.name}
+                    </TableCell>
+                    <TableCell className="px-2 sm:px-4 py-4 text-text-muted font-mono text-sm max-w-[300px] truncate hidden xl:table-cell">
+                      {endpoint.url.replace(/^https?:\/\//, '')}
+                    </TableCell>
+                    <TableCell className="px-2 sm:px-4 py-4">
+                      {getStatusBadge(endpoint)}
+                    </TableCell>
+                    <TableCell className="px-2 sm:px-4 py-4 text-text-muted text-sm hidden md:table-cell">
+                      {check?.checked_at ? (
+                        <div className="flex flex-col">
+                          <span className="text-text-main">{new Date(check.checked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-text-dim text-xs opacity-70">{new Date(check.checked_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      ) : "Never"}
+                    </TableCell>
+                    <TableCell className="px-2 sm:px-4 py-4 text-text-muted text-sm hidden lg:table-cell">
+                      {endpoint.is_active ? (
+                        getNextCheckTime(check?.checked_at, endpoint.check_interval)
+                      ) : (
+                        <Badge variant="neutral" className="text-text-muted">
+                          Paused
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-2 sm:px-4 py-4 text-right">
+                      <div className="flex justify-end gap-1 sm:gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-text-muted hover:text-text-main"
+                          onClick={(e) => handleCheckNow(endpoint.id, e)}
+                          disabled={isChecking}
+                          title="Run Check"
+                        >
+                          {isChecking ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Badge variant="outline" className="text-muted-foreground">
-                              Paused
-                            </Badge>
+                            <Activity className="h-4 w-4" />
                           )}
-                        </td>
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <span className="isolate inline-flex rounded-md shadow-sm">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="relative inline-flex items-center rounded-l-md rounded-r-none border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
-                              onClick={(e) => handleCheckNow(endpoint.id, e)}
-                              disabled={isChecking}
-                            >
-                              {isChecking ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Activity className="h-4 w-4" />
-                              )}
-                              <span className="ml-2 hidden sm:inline">Check</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              asChild
-                              className="relative -ml-px inline-flex items-center rounded-none border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
-                            >
-                              <Link href={`/protected/endpoints/${endpoint.id}`}>
-                                <ExternalLink className="h-4 w-4" />
-                                <span className="ml-2 hidden sm:inline">Details</span>
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              asChild
-                              className="relative -ml-px inline-flex items-center rounded-r-md rounded-l-none border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
-                            >
-                              <Link href={`/protected/endpoints/${endpoint.id}/edit`}>
-                                <Pencil className="h-4 w-4" />
-                                <span className="ml-2 hidden sm:inline">Edit</span>
-                              </Link>
-                            </Button>
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          className="h-8 w-8 text-text-muted hover:text-text-main"
+                          title="Details"
+                        >
+                          <Link href={`/protected/endpoints/${endpoint.id}`}>
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          className="h-8 w-8 text-text-muted hover:text-text-main"
+                          title="Edit"
+                        >
+                          <Link href={`/protected/endpoints/${endpoint.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

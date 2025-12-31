@@ -39,9 +39,9 @@ export default async function StatusPagesList() {
                                 <CardTitle className="flex justify-between items-start gap-2">
                                     <span className="truncate">{page.title}</span>
                                     {page.is_public ? (
-                                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Public</Badge>
+                                        <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Public</Badge>
                                     ) : (
-                                        <Badge variant="outline">Private</Badge>
+                                        <Badge variant="neutral">Private</Badge>
                                     )}
                                 </CardTitle>
                                 <CardDescription className="line-clamp-2 min-h-[2.5rem]">

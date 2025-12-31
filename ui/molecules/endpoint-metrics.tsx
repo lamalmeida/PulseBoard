@@ -1,30 +1,9 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Line } from "react-chartjs-2";
-import { useEffect, useState } from "react";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartOptions,
-  ChartData,
-} from "chart.js";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Card, CardHeader, CardTitle, CardContent } from "@/ui/atoms/card";
+import { Activity } from "lucide-react";
 
 type Check = {
   id: string;
@@ -36,42 +15,8 @@ type Check = {
 
 export function EndpointMetrics({ checks }: { checks: Check[] }) {
   const { theme } = useTheme();
-  const [chartColors, setChartColors] = useState({
-    primary: "rgb(0, 0, 0)",
-    background: "rgb(255, 255, 255)", // Added to create the 'halo' effect
-    border: "rgb(200, 200, 200)",
-    popover: "rgb(255, 255, 255)",
-    popoverForeground: "rgb(0, 0, 0)",
-    mutedForeground: "rgb(100, 100, 100)",
-    muted: "rgb(240, 240, 240)",
-  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const root = document.documentElement;
-      const computedStyle = getComputedStyle(root);
-
-      const getColor = (varName: string) => {
-        const value = computedStyle.getPropertyValue(varName).trim();
-        if (!value) return "";
-        return `hsl(${value.replaceAll(" ", ",")})`;
-      };
-
-      setChartColors({
-        primary: getColor("--primary"),
-        background: getColor("--background"), // Fetches the card/page background color
-        border: getColor("--border"),
-        popover: getColor("--popover"),
-        popoverForeground: getColor("--popover-foreground"),
-        mutedForeground: getColor("--muted-foreground"),
-        muted: getColor("--muted"),
-      });
-    }, 10);
-
-    return () => clearTimeout(timer);
-  }, [theme]);
-
-  // Filter checks from the last 30 days
+  // Filter checks from the last 30 days and sort by date
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -82,145 +27,101 @@ export function EndpointMetrics({ checks }: { checks: Check[] }) {
         new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime()
     );
 
-  const chartData: ChartData<"line"> = {
-    labels: recentChecks.map((check) => {
-      const date = new Date(check.checked_at);
-      // Format based on data density
-      if (recentChecks.length > 100) {
-        // For many data points, show just date
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      } else if (recentChecks.length > 50) {
-        // For moderate data points, show date and hour
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit' });
-      } else {
-        // For fewer data points, show full date and time
-        return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-      }
-    }),
-    datasets: [
-      {
-        label: "Response Time (ms)",
-        data: recentChecks.map((check) => check.response_time),
-        borderColor: chartColors.primary,
-        // Made solid to hide the line behind
-        backgroundColor: chartColors.primary,
-        pointBackgroundColor: chartColors.primary,
-        // Adds a small background-colored border to the dot for contrast
-        pointBorderColor: chartColors.background,
-        pointBorderWidth: 2,
-        borderWidth: 2,
-        tension: 0.4,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        yAxisID: "y",
-        borderDash: [5, 5],
-      },
-      {
-        label: "Status",
-        data: recentChecks.map((check) => (check.status === "success" ? 1 : 0)),
-        borderColor: "hsl(142.1, 70.6%, 45.3%)",
-        // Made solid green
-        backgroundColor: "hsl(142.1, 70.6%, 45.3%)",
-        pointBackgroundColor: "hsl(142.1, 70.6%, 45.3%)",
-        pointBorderColor: chartColors.background,
-        pointBorderWidth: 2,
-        borderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        yAxisID: "y1",
-        borderDash: [5, 5],
-      },
-    ],
-  };
+  const data = recentChecks.map(check => ({
+    timestamp: new Date(check.checked_at).getTime(), // Unique key for XAxis
+    time: new Date(check.checked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    fullDate: new Date(check.checked_at).toLocaleString(),
+    latency: check.response_time,
+    status: check.status,
+    statusCode: check.status_code
+  }));
 
-  const options: ChartOptions<"line"> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: "index",
-      intersect: false,
-    },
-    scales: {
-      x: {
-        grid: {
-          color: chartColors.border,
-        },
-        ticks: {
-          color: chartColors.mutedForeground,
-        },
-      },
-      y: {
-        type: "linear",
-        display: true,
-        position: "left",
-        grid: {
-          color: chartColors.border,
-        },
-        ticks: {
-          color: chartColors.mutedForeground,
-        },
-      },
-      y1: {
-        type: "linear",
-        display: true,
-        position: "right",
-        min: 0,
-        max: 1.1, // Buffer to prevent cutoff
-        grid: {
-          drawOnChartArea: false,
-        },
-        ticks: {
-          stepSize: 1,
-          color: chartColors.mutedForeground,
-          callback: (value) => (value === 1 ? "Up" : "Down"),
-        },
-      },
-    },
-    plugins: {
-      legend: {
-        labels: {
-          color: chartColors.popoverForeground,
-          padding: 20,
-        },
-      },
-      tooltip: {
-        backgroundColor: chartColors.popover,
-        titleColor: chartColors.popoverForeground,
-        bodyColor: chartColors.popoverForeground,
-        borderColor: chartColors.border,
-        borderWidth: 1,
-        padding: 12,
-        callbacks: {
-          label: (context) => {
-            const label = context.dataset.label || "";
-            const value = context.parsed.y;
-            if (context.datasetIndex === 0) {
-              return `${label}: ${value}ms`;
-            }
-            return `${label}: ${value === 1 ? "Up" : "Down"}`;
-          },
-          afterBody: (context) => {
-            const index = context[0].dataIndex;
-            const check = recentChecks[index];
-            return [
-              `Status: ${check.status.toUpperCase()}`,
-              `Status Code: ${check.status_code || "N/A"}`,
-              `Time: ${new Date(check.checked_at).toLocaleString()}`,
-            ];
-          },
-        },
-      },
-    },
-  };
+  if (data.length === 0) {
+    return (
+      <Card className="border-border-subtle bg-surface-base/50">
+        <CardContent className="px-4 py-12 flex flex-col items-center justify-center text-center">
+          <Activity className="h-12 w-12 text-text-muted mb-4" />
+          <h3 className="text-lg font-medium text-text-main mb-2">No data available</h3>
+          <p className="text-text-muted mb-6 max-w-sm">
+            There is no performance data available for this period.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="p-6 bg-card rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-4 text-foreground">
-        Performance Metrics
-      </h2>
-      <div className="h-80">
-        <Line key={theme} data={chartData} options={options} />
-      </div>
-    </div>
+    <Card className="w-full h-full border-border-subtle bg-surface-base/50">
+      <CardHeader className="border-b border-border-subtle/50 pb-4">
+        <div>
+          <CardTitle className="text-text-main font-semibold">Response Time</CardTitle>
+          <p className="text-text-muted text-xs mt-1">Average latency over time</p>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-6 h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={data}
+            margin={{ top: 10, right: 10, left: 20, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorLatency" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--brand))" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="hsl(var(--brand))" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(var(--border))"
+              strokeOpacity={0.5}
+              vertical={false}
+            />
+            <XAxis
+              dataKey="timestamp"
+              tickFormatter={(unixTime) => new Date(unixTime).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric' })}
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              axisLine={false}
+              tickLine={{ stroke: 'hsl(var(--muted-foreground))', opacity: 0.2 }}
+              dy={10}
+              minTickGap={30}
+            />
+            <YAxis
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(value) => `${value}ms`}
+              width={40}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--popover))',
+                borderColor: 'hsl(var(--border))',
+                color: 'hsl(var(--popover-foreground))',
+                borderRadius: '12px',
+                borderWidth: '1px',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
+                backdropFilter: 'blur(8px)'
+              }}
+              itemStyle={{ color: 'hsl(var(--foreground))', fontWeight: 500 }}
+              labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '0.5rem' }}
+              cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '5 5' }}
+              labelFormatter={(value) => new Date(value).toLocaleString()}
+              formatter={(value: any) => [`${value}ms`, 'Latency']}
+            />
+            <Area
+              type="monotone"
+              dataKey="latency"
+              stroke="hsl(var(--brand))"
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorLatency)"
+              animationDuration={1000}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 }

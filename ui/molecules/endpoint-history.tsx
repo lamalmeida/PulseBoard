@@ -1,7 +1,17 @@
 "use client";
 
-import { Check, X, Clock, Activity, Loader2 } from "lucide-react";
+import { Check, X, Clock, Activity, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/ui/atoms/button";
+import { Badge, type BadgeVariant } from "@/ui/atoms/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/ui/atoms/table";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/ui/atoms/card";
 import { triggerCheck } from "@/app/actions/endpoint-actions";
 import { useState } from "react";
 import { toast } from "@/lib/toast";
@@ -27,18 +37,21 @@ export function EndpointHistoryTable({
   const router = useRouter();
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    // Format: Dec 30, 10:42 PM
+    return new Date(dateString).toLocaleTimeString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const getStatusIcon = (status: string) => {
-    if (status === "success") {
-      return <Check className="h-4 w-4 text-green-500" />;
-    }
-    if (status === "error") {
-      return <X className="h-4 w-4 text-red-500" />;
-    }
-    return <Clock className="h-4 w-4 text-yellow-500" />;
+  const mapStatusToVariant = (status: string, statusCode?: number): BadgeVariant => {
+    if (status === 'success') return 'success';
+    if (status === 'error') return 'error';
+    if (statusCode && statusCode >= 500) return 'error';
+    if (statusCode && statusCode >= 400) return 'warning';
+    return 'neutral';
   };
 
   const handleCheckNow = async () => {
@@ -63,11 +76,11 @@ export function EndpointHistoryTable({
 
   if (checks.length === 0) {
     return (
-      <div className="bg-card shadow overflow-hidden sm:rounded-lg border border-border">
-        <div className="px-4 py-12 sm:px-6 flex flex-col items-center justify-center text-center">
-          <Activity className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No checks yet</h3>
-          <p className="text-muted-foreground mb-6 max-w-sm">
+      <Card className="border-border-subtle bg-surface-base">
+        <CardContent className="px-4 py-12 flex flex-col items-center justify-center text-center">
+          <Activity className="h-12 w-12 text-text-muted mb-4" />
+          <h3 className="text-lg font-medium text-text-main mb-2">No checks yet</h3>
+          <p className="text-text-muted mb-6 max-w-sm">
             This endpoint hasn't been checked yet. Run a manual check to verify its status.
           </p>
           <Button
@@ -81,106 +94,74 @@ export function EndpointHistoryTable({
             )}
             Run Check Now
           </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-card shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-        <h3 className="text-lg leading-6 font-medium text-foreground">
-          Check History
-        </h3>
+    <Card className="border-border-subtle bg-surface-base">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border-subtle/50 pb-4">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg font-semibold text-text-main">Recent Checks</CardTitle>
+          <Badge variant="neutral">{checks.length} Total</Badge>
+        </div>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={handleCheckNow}
           disabled={isChecking}
+          className="gap-2"
         >
           {isChecking ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Activity className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4" />
           )}
-          Run Check
+          <span className="hidden sm:inline">Refresh</span>
         </Button>
+      </CardHeader>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-surface-glass border-b border-border-subtle hover:bg-surface-glass">
+              <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Status</TableHead>
+              <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Method</TableHead>
+              <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Latency</TableHead>
+              <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Code</TableHead>
+              <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Time</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {checks.map((check) => (
+              <TableRow key={check.id} className="group hover:bg-surface-highlight transition-colors border-b border-border-subtle">
+                <TableCell className="px-6 py-4">
+                  <Badge variant={mapStatusToVariant(check.status, check.status_code)}>
+                    {check.status_code || check.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  <span className="font-mono text-sm text-text-main font-medium">GET</span>
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  <span className="text-text-muted text-sm">{check.response_time}ms</span>
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  <span className="font-mono text-text-dim text-sm">{check.status_code || "-"}</span>
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  <span className="text-text-dim text-sm">{formatDate(check.checked_at)}</span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
-      <div className="border-t border-border">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-muted/50">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
-                  Time
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
-                  Response Time
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
-                  Status Code
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
-                  Error
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-card divide-y divide-border">
-              {checks.map((check) => (
-                <tr key={check.id} className="hover:bg-muted/50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-5 w-5">
-                        {getStatusIcon(check.status)}
-                      </div>
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${check.status === 'success'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                          : check.status === 'error'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
-                          }`}
-                      >
-                        {check.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    {formatDate(check.checked_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    {check.response_time}ms
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    {check.status_code || "N/A"}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground max-w-xs truncate">
-                    {check.error_message || "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+
+      <CardFooter className="pt-4 border-t-0">
+        <span className="text-text-muted text-sm">Showing last {checks.length} checks</span>
+      </CardFooter>
+    </Card>
   );
 }

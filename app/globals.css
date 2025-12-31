@@ -3,6 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  .cosmic-grid {
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 50px 50px;
+    mask-image: linear-gradient(to bottom, transparent, 20%, white, 90%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, 5%, white, 90%, transparent);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
@@ -24,41 +39,88 @@
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
     --radius: 0.5rem;
-    --brand: 12 100% 50%;
-    /*12 100% 50%; */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --brand: 25 95% 53%;
+    /* Vivid Orange */
+
+    /* Cosmic Light Variables */
+    --brand-primary: #FA4505;
+    --brand-hover: #D63903;
+    --brand-glow: rgba(250, 69, 5, 0.3);
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #f43f5e;
+
+    --bg-app: #ffffff;
+    --bg-grid: rgba(0, 0, 0, 0.03);
+    --surface-base: rgba(255, 255, 255, 0.8);
+    --surface-glass: rgba(0, 0, 0, 0.02);
+    --surface-highlight: rgba(0, 0, 0, 0.05);
+    --surface-input: rgba(249, 250, 251, 1);
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --border-highlight: rgba(0, 0, 0, 0.15);
+    --border-focus: #FA4505;
+    --text-main: #111827;
+    --text-muted: #4b5563;
+    --text-dim: #9ca3af;
+    --text-on-brand: #ffffff;
+    --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(250, 69, 5, 0.15);
+    --shadow-button: 0 4px 12px rgba(250, 69, 5, 0.2);
+    --shadow-button-hover: 0 8px 20px rgba(250, 69, 5, 0.3);
+    --chart-grid: #f3f4f6;
+    --chart-line: #111827;
+    --chart-tooltip-bg: rgba(255, 255, 255, 0.95);
   }
 
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 0 0% 2%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --card: 240 5.9% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 240 5.9% 10%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
     --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
     --ring: 0 0% 83.1%;
-    --brand: 240 100% 50%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --brand: 218 80% 50%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Cosmic Dark Variables */
+    --brand-primary: #1930ff;
+    --brand-hover: #1526d6;
+    --brand-glow: rgba(25, 48, 255, 0.3);
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #f43f5e;
+
+    --bg-app: #050505;
+    --bg-grid: rgba(255, 255, 255, 0.03);
+    --surface-base: rgba(24, 24, 27, 0.6);
+    --surface-glass: rgba(255, 255, 255, 0.05);
+    --surface-highlight: rgba(255, 255, 255, 0.1);
+    --surface-input: rgba(0, 0, 0, 0.8);
+    --border-subtle: rgba(255, 255, 255, 0.1);
+    --border-highlight: rgba(255, 255, 255, 0.2);
+    --border-focus: #1930ff;
+    --text-main: #e4e4e7;
+    --text-muted: #a1a1aa;
+    --text-dim: #52525b;
+    --text-on-brand: #ffffff;
+    --shadow-card: 0 8px 30px rgba(255, 255, 255, 0.04), 0 4px 12px rgba(25, 48, 255, 0.2);
+    --shadow-button: 0 0 20px rgba(25, 48, 255, 0.3);
+    --shadow-button-hover: 0 0 30px rgba(25, 48, 255, 0.5);
+    --chart-grid: #27272a;
+    --chart-line: #ffffff;
+    --chart-tooltip-bg: rgba(9, 9, 11, 0.9);
   }
 }
 

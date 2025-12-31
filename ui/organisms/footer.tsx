@@ -7,7 +7,10 @@ export function Footer() {
                 <Link href="/" className="flex items-center gap-4">
                     <img src="/logo-transparent.png" alt="Logo" className="w-12 h-12 dark:hidden" />
                     <img src="/logo-dark-transparent.png" alt="Logo" className="w-12 h-12 hidden dark:block" />
-                    <span className="text-lg font-bold tracking-tighter uppercase">PulseBoard</span>
+                    <div className="flex flex-col">
+                        <span className="text-lg font-bold tracking-tighter uppercase leading-none">PulseBoard</span>
+                        <span className="text-[10px] text-text-muted font-mono tracking-tight leading-none pt-1">By Luis Almeida</span>
+                    </div>
                 </Link>
                 <div className="hidden md:flex items-center gap-12 text-xs font-mono uppercase tracking-widest opacity-60 absolute left-1/2 -translate-x-1/2">
                     <span>© 2025 LAMAs. All rights reserved.</span>

@@ -20,7 +20,7 @@ export function Navbar() {
     // Prevent hydration mismatch
     if (!mounted) {
         return (
-            <nav className="fixed top-0 left-0 w-full z-50 border-b border-black/5 dark:border-white/5 bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125">
+            <nav className="fixed top-0 left-0 w-full z-50 border-b border-black/5 dark:border-white/5 bg-[#F4F4F0]/95 dark:bg-[#050505]/95 backdrop-blur-lg backdrop-saturate-150 backdrop-contrast-125">
                 <div className="max-w-[1800px] mx-auto px-6 h-20 flex justify-between items-center">
                     <Link href="/" className="flex items-center gap-4">
                         <img src="/logo-transparent.png" alt="Logo" className="w-12 h-12 dark:hidden" />
@@ -36,12 +36,15 @@ export function Navbar() {
     const isDark = theme === "dark";
 
     return (
-        <nav className="fixed top-0 left-0 w-full z-50 border-b border-black/5 dark:border-white/5 bg-[#F4F4F0]/75 dark:bg-[#050505]/75 backdrop-blur-md backdrop-saturate-150 backdrop-contrast-125">
+        <nav className="fixed top-0 left-0 w-full z-50 border-b border-black/5 dark:border-white/5 bg-[#F4F4F0]/95 dark:bg-[#050505]/95 backdrop-blur-lg backdrop-saturate-150 backdrop-contrast-125">
             <div className="max-w-[1800px] mx-auto px-6 h-20 flex justify-between items-center relative">
                 <Link href="/" className="flex items-center gap-4">
                     <img src="/logo-transparent.png" alt="Logo" className="w-12 h-12 dark:hidden" />
                     <img src="/logo-dark-transparent.png" alt="Logo" className="w-12 h-12 hidden dark:block" />
-                    <span className="text-lg font-bold tracking-tighter uppercase">PulseBoard</span>
+                    <div className="flex flex-col">
+                        <span className="text-lg font-bold tracking-tighter uppercase leading-none">PulseBoard</span>
+                        <span className="text-[10px] text-text-muted font-mono tracking-tight leading-none pt-1">By Luis Almeida</span>
+                    </div>
                 </Link>
                 {/* <div className="hidden md:flex items-center gap-12 text-xs font-mono uppercase tracking-widest opacity-60 absolute left-1/2 -translate-x-1/2">
                     <Link href="#" className="hover:opacity-100 transition-opacity">Features</Link>

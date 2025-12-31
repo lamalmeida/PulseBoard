@@ -65,7 +65,7 @@ export function HeroSection() {
                     </div>
                     <div>
                         <Link href="/auth/sign-up">
-                            <Button variant="brand" size="xl" className="group relative overflow-hidden">
+                            <Button variant="default" size="xl" className="group relative overflow-hidden">
                                 <span className="relative z-10 font-medium text-sm flex items-center gap-2">
                                     Start Monitoring <ArrowUpRight className="w-4 h-4" />
                                 </span>
