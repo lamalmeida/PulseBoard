@@ -1,4 +1,4 @@
-
+import { DocsImage } from "@/ui/atoms/docs-image";
 export default function MonitoringPage() {
     return (
         <div className="space-y-8">
@@ -35,17 +35,11 @@ export default function MonitoringPage() {
                     <li><strong>Content Negotiation:</strong> <code>Accept: application/json</code></li>
                     <li><strong>Custom Security Keys:</strong> <code>X-API-Key: ...</code></li>
                 </ul>
-                <div className="my-6 aspect-[3/1] w-full rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 overflow-hidden relative">
-                    <img
-                        src="/docs/headers-config.png"
-                        alt="Headers Configuration"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                    />
-                    <div className="hidden absolute inset-0 flex items-center justify-center text-text-muted">
-                        [Image: public/docs/headers-config.png]
-                    </div>
-                </div>
+                <DocsImage
+                    src="/docs/headers-config.png"
+                    alt="Headers Configuration"
+                    className="my-6 border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
+                />
             </section>
 
             <section>

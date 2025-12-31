@@ -1,4 +1,4 @@
-
+import { DocsImage } from "@/ui/atoms/docs-image";
 export default function QuickStartPage() {
     return (
         <div className="space-y-8">
@@ -16,17 +16,11 @@ export default function QuickStartPage() {
                 <p>
                     Navigate to the <a href="/auth/sign-up" className="text-brand underline decoration-brand/30 hover:decoration-brand">Sign Up page</a> and create a new account using your email address. It's completely free for up to 10 endpoints.
                 </p>
-                <div className="my-6 aspect-[2/1] w-full rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 overflow-hidden relative">
-                    <img
-                        src="/docs/sign-up.png"
-                        alt="Sign Up Page"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                    />
-                    <div className="hidden absolute inset-0 flex items-center justify-center text-text-muted">
-                        [Image: public/docs/sign-up.png]
-                    </div>
-                </div>
+                <DocsImage
+                    src="/docs/sign-up.png"
+                    alt="Sign Up Page"
+                    className="my-6 border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
+                />
             </section>
 
             <section>
@@ -39,17 +33,11 @@ export default function QuickStartPage() {
                     <li><strong>URL:</strong> The full HTTP/HTTPS URL you want to monitor.</li>
                     <li><strong>Interval:</strong> How often we should check this endpoint (default is 1 hour).</li>
                 </ul>
-                <div className="my-6 aspect-[2/1] w-full rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 overflow-hidden relative">
-                    <img
-                        src="/docs/add-endpoint.png"
-                        alt="Add Endpoint Form"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                    />
-                    <div className="hidden absolute inset-0 flex items-center justify-center text-text-muted">
-                        [Image: public/docs/add-endpoint.png]
-                    </div>
-                </div>
+                <DocsImage
+                    src="/docs/add-endpoint.png"
+                    alt="Add Endpoint Form"
+                    className="my-6 border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
+                />
             </section>
 
             <section>
