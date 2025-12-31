@@ -16,8 +16,16 @@ export default function AlertsPage() {
                 <p>
                     Alerts are sent to your registered email address securely via our provider, Resend.
                 </p>
-                <div className="my-6 aspect-[3/1] w-full rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-muted">
-                    [PLACEHOLDER: Email Notification Sample Screenshot]
+                <div className="my-6 aspect-[3/1] w-full rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 overflow-hidden relative">
+                    <img
+                        src="/docs/email-notification.png"
+                        alt="Email Notification"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                    />
+                    <div className="hidden absolute inset-0 flex items-center justify-center text-text-muted">
+                        [Image: public/docs/email-notification.png]
+                    </div>
                 </div>
             </section>
 

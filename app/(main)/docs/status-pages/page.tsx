@@ -16,8 +16,16 @@ export default function StatusPagesPage() {
                 <p>
                     Go to the <strong>Status Pages</strong> tab in your dashboard and click "Create New Page". A Status Page can display one or multiple endpoints.
                 </p>
-                <div className="my-6 aspect-[2/1] w-full rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-muted">
-                    [PLACEHOLDER: Status Page Creation Form Screenshot]
+                <div className="my-6 aspect-[2/1] w-full rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 overflow-hidden relative">
+                    <img
+                        src="/docs/status-page-form.png"
+                        alt="Status Page Form"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                    />
+                    <div className="hidden absolute inset-0 flex items-center justify-center text-text-muted">
+                        [Image: public/docs/status-page-form.png]
+                    </div>
                 </div>
             </section>
 

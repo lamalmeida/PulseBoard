@@ -14,8 +14,20 @@ export default function DocsPage() {
                 </p>
             </div>
 
-            <div className="aspect-video w-full rounded-xl border border-border-subtle bg-surface-base flex items-center justify-center text-text-muted animate-pulse">
-                [PLACEHOLDER: Dashboard Overview Screenshot]
+            <div className="aspect-video w-full rounded-xl border border-border-subtle bg-surface-base overflow-hidden relative group">
+                <img
+                    src="/docs/dashboard-overview.png"
+                    alt="Dashboard Overview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                        // Fallback for when image is missing to keep the placeholder look
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                />
+                <div className="hidden absolute inset-0 flex items-center justify-center text-text-muted bg-black/5 dark:bg-white/5 animate-pulse">
+                    [Image: public/docs/dashboard-overview.png]
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
