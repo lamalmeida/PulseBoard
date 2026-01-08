@@ -24,6 +24,7 @@ type Check = {
   checked_at: string;
   status_code?: number;
   error_message?: string;
+  num_checks?: number;
 };
 
 export function EndpointHistoryTable({
@@ -130,6 +131,7 @@ export function EndpointHistoryTable({
               <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Method</TableHead>
               <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Latency</TableHead>
               <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Code</TableHead>
+              <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Checks</TableHead>
               <TableHead className="px-6 py-3 text-xs font-medium text-text-dim uppercase tracking-widest">Time</TableHead>
             </TableRow>
           </TableHeader>
@@ -149,6 +151,9 @@ export function EndpointHistoryTable({
                 </TableCell>
                 <TableCell className="px-6 py-4">
                   <span className="font-mono text-text-dim text-sm">{check.status_code || "-"}</span>
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  <span className="text-text-muted text-sm">{check.num_checks || 1}</span>
                 </TableCell>
                 <TableCell className="px-6 py-4">
                   <span className="text-text-dim text-sm">{formatDate(check.checked_at)}</span>

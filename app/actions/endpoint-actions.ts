@@ -156,3 +156,13 @@ export async function triggerCheck(endpointId: string) {
     };
   }
 }
+
+export async function getEndpointChecks(endpointId: string, limit: number = 2000) {
+  try {
+    const checks = await WorkerAPI.getChecks(endpointId, limit);
+    return checks;
+  } catch (error) {
+    console.error("Failed to fetch endpoint checks:", error);
+    return [];
+  }
+}

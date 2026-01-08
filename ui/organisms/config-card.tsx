@@ -1,5 +1,4 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter } from '../atoms/card';
 import { Badge } from '../atoms/badge';
 import { Button } from '../atoms/button';
@@ -16,7 +15,6 @@ export function ConfigCard({ endpoint, className }: ConfigCardProps) {
         <Card className={cn("w-full h-full bg-surface-base backdrop-blur-md", className)}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <h3 className="text-text-main font-semibold text-lg">Configuration</h3>
-                <Settings size={18} className="text-text-muted" />
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
                 <div>
@@ -35,12 +33,15 @@ export function ConfigCard({ endpoint, className }: ConfigCardProps) {
                     </div>
                     {/* Placeholder values since these might not be in the basic endpoint object yet */}
                     <div className="flex items-center justify-between">
-                        <span className="text-text-muted text-sm">Timeout</span>
-                        <span className="font-mono text-text-main font-medium">{endpoint.timeout_sec ? `${endpoint.timeout_sec}s` : '10s'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-text-muted text-sm">Rate Limit</span>
-                        <span className="font-mono text-text-main font-medium">60/m</span>
+                        <span className="text-text-muted text-sm">Check Interval</span>
+                        <span className="font-mono text-text-main font-medium">
+                            {endpoint.check_interval < 60
+                                ? `${endpoint.check_interval}s`
+                                : endpoint.check_interval < 3600
+                                    ? `${Math.floor(endpoint.check_interval / 60)}m`
+                                    : `${Math.floor(endpoint.check_interval / 3600)}h`
+                            }
+                        </span>
                     </div>
                 </div>
 
@@ -51,7 +52,7 @@ export function ConfigCard({ endpoint, className }: ConfigCardProps) {
                     <div className="space-y-3">
                         <div>
                             <div className="flex justify-between text-xs mb-1">
-                                <span className="text-text-muted">Latency {'>'} 1000ms</span>
+                                <span className="text-text-muted">Latency {'>'} {(endpoint.timeout_sec || 10) * 1000}ms</span>
                                 <span className="text-text-main">Alert</span>
                             </div>
                             <div className="w-full h-2 bg-surface-highlight rounded-full overflow-hidden">

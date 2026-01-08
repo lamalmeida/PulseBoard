@@ -24,6 +24,7 @@ import {
 } from "@/ui/atoms/select";
 import { createEndpoint } from "@/app/actions/endpoint-actions";
 import { toast } from "@/lib/toast";
+import { validateCheckInterval } from "@/lib/rate-limits";
 
 import { Plus, Trash2 } from "lucide-react";
 
@@ -88,6 +89,31 @@ export function AddEndpointForm() {
     setHeaders(newHeaders);
   };
 
+  const toLog = (seconds: number) => {
+    const min = 15;
+    const max = 86400;
+    if (seconds <= min) return 0;
+    if (seconds >= max) return 100;
+    const minLog = Math.log(min);
+    const maxLog = Math.log(max);
+    return (Math.log(seconds) - minLog) / (maxLog - minLog) * 100;
+  };
+
+  const fromLog = (value: number) => {
+    const min = 15;
+    const max = 86400;
+    if (value <= 0) return min;
+    if (value >= 100) return max;
+    const minLog = Math.log(min);
+    const maxLog = Math.log(max);
+    const raw = Math.exp(value / 100 * (maxLog - minLog) + minLog);
+
+    if (raw < 60) return Math.round(raw / 5) * 5;     // 5s steps
+    if (raw < 3600) return Math.round(raw / 60) * 60; // 1m steps
+    if (raw < 43200) return Math.round(raw / 300) * 300; // 5m steps up to 12h
+    return Math.round(raw / 3600) * 3600;             // 1h steps
+  };
+
   const formatInterval = (seconds: number) => {
     if (seconds >= 3600) {
       const hours = Math.floor(seconds / 3600);
@@ -108,6 +134,12 @@ export function AddEndpointForm() {
 
     if (!validateForm()) {
       toast.error("Please fix validation errors");
+      return;
+    }
+
+    const validation = validateCheckInterval(interval[0]);
+    if (!validation.valid) {
+      toast.error(validation.error || "Invalid check interval");
       return;
     }
 
@@ -308,22 +340,22 @@ export function AddEndpointForm() {
                   <span className="text-sm font-medium text-text-main">{formatInterval(interval[0])}</span>
                 </div>
                 <Slider
-                  value={interval}
-                  min={300}
-                  max={86400}
-                  step={300}
-                  onValueChange={setInterval}
+                  value={[toLog(interval[0])]}
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  onValueChange={(vals) => setInterval([fromLog(vals[0])])}
                   disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  How often to check endpoint health (5m - 24h).
+                  How often to check endpoint health (15s - 24h).
                 </p>
               </div>
 
               <div className="grid gap-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="timeout">Request Timeout</Label>
-                  <span className="text-sm font-medium text-text-main">{timeout[0]}s</span>
+                  <Label htmlFor="timeout">Alert Threshold</Label>
+                  <span className="text-sm font-medium text-text-main">{timeout[0] * 1000}ms</span>
                 </div>
                 <Slider
                   value={timeout}
@@ -334,7 +366,7 @@ export function AddEndpointForm() {
                   disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Maximum time to wait for a response (1s - 60s).
+                  Latency above this value triggers an alert.
                 </p>
               </div>
             </div>

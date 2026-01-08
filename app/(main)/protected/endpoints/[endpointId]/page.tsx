@@ -37,7 +37,7 @@ export default async function EndpointDetailPage({
     // 2. Fetch Data in Parallel
     const [endpoint, checks, statsData] = await Promise.all([
       WorkerAPI.getEndpoint(endpointId),
-      WorkerAPI.getChecks(endpointId, 100), // Fetch last 100 checks for graph/history
+      WorkerAPI.getChecks(endpointId, 2000), // Fetch last 2000 checks (approx 1 week at 5m intervals)
       WorkerAPI.getStats(endpointId),
     ]);
 
@@ -45,21 +45,50 @@ export default async function EndpointDetailPage({
       redirect("/protected/endpoints");
     }
 
-    const stats = statsData || {
-      uptime_24h: 0,
-      avg_response_time_24h: 0,
-      total_checks_24h: 0,
-      successful_checks_24h: 0,
-    };
+    // Calculate stats from the fetched checks (handling aggregated checks)
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Calculate total offline (failed checks) from the fetched checks for the card
-    // Note: API stats gives 24h stats. For "Total Outages" we might want all time or 24h.
-    // Let's use the count of failed checks in the fetched list (last 100) or calculate from stats if possible.
-    // Stats doesn't explicitly have "failure count" but total - successful.
-    const failures24h = (stats.total_checks_24h || 0) - (stats.successful_checks_24h || 0);
-    const errorRate = stats.total_checks_24h > 0
-      ? ((failures24h / stats.total_checks_24h) * 100).toFixed(2)
+    const checks24h = (checks || []).filter((check: any) => new Date(check.checked_at) > oneDayAgo);
+
+    let totalChecks24h = 0;
+    let successfulChecks24h = 0;
+    let totalLatency24h = 0;
+
+    checks24h.forEach((check: any) => {
+      const numChecks = check.num_checks || 1;
+      totalChecks24h += numChecks;
+
+      // Count successful checks
+      // Note: We're assuming if an aggregated check is 'success', all contained checks were success
+      // or that the status represents the majority/aggregate state.
+      if (check.status === 'success') {
+        successfulChecks24h += numChecks;
+      }
+
+      // Weighted latency
+      totalLatency24h += (check.response_time || 0) * numChecks;
+    });
+
+    const uptime24h = totalChecks24h > 0
+      ? ((successfulChecks24h / totalChecks24h) * 100).toFixed(2)
       : "0.00";
+
+    const avgLatency24h = totalChecks24h > 0
+      ? Math.round(totalLatency24h / totalChecks24h)
+      : 0;
+
+    const failures24h = totalChecks24h - successfulChecks24h;
+    const errorRate = totalChecks24h > 0
+      ? ((failures24h / totalChecks24h) * 100).toFixed(2)
+      : "0.00";
+
+    const stats = {
+      uptime_24h: uptime24h,
+      avg_response_time_24h: avgLatency24h,
+      total_checks_24h: totalChecks24h,
+      successful_checks_24h: successfulChecks24h
+    };
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
@@ -133,7 +162,7 @@ export default async function EndpointDetailPage({
           {/* Main Graph Column */}
           <div className="lg:col-span-5 h-full min-h-[300px]">
             <div className="h-full w-full">
-              <EndpointMetrics checks={checks || []} />
+              <EndpointMetrics checks={checks || []} endpointId={endpointId} />
             </div>
           </div>
 
