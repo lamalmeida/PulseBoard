@@ -20,7 +20,7 @@ import { validateCheckInterval } from "@/lib/rate-limits";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/atoms/card";
-
+//
 type EditEndpointFormProps = {
     endpoint: {
         id: string;
