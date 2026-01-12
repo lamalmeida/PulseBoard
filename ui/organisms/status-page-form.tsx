@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/ui/atoms/button";
 import { Input } from "@/ui/atoms/input";
@@ -9,9 +9,10 @@ import { Label } from "@/ui/atoms/label";
 import { Switch } from "@/ui/atoms/switch";
 import { createStatusPage, updateStatusPage } from "@/app/actions/status-page-actions";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/ui/atoms/card";
-import { Checkbox } from "@/ui/atoms/checkbox";
 import { Loader2 } from "lucide-react";
+import { parseStatusPageDescription, stringifyStatusPageConfig, GroupConfig } from "@/lib/status-page-utils";
+import { GroupEditor } from "@/ui/organisms/group-editor";
+import { v4 as uuidv4 } from "uuid";
 
 type Endpoint = {
     id: string;
@@ -37,10 +38,21 @@ export function StatusPageForm({
 }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Parse initial description to separate text and group config
+    const initialConfig = parseStatusPageDescription(initialData?.description);
+
+    // State for description text (user visible)
+    const [descriptionText, setDescriptionText] = useState(initialConfig.description);
+    // State for groups
+    const [groups, setGroups] = useState<GroupConfig[]>(initialConfig.groups);
+    // State for logo
+    const [logoUrl, setLogoUrl] = useState(initialConfig.logoUrl || "");
+
     const [formData, setFormData] = useState<StatusPageData>({
         title: initialData?.title || "",
         slug: initialData?.slug || "",
-        description: initialData?.description || "",
+        description: initialData?.description || "", // Will be overwritten on submit
         is_public: initialData?.is_public || false,
         endpoint_ids: initialData?.endpoint_ids || [],
     });
@@ -56,14 +68,23 @@ export function StatusPageForm({
         }
     };
 
+    const handleGroupEditorChange = (data: { endpoint_ids: string[]; groups: GroupConfig[] }) => {
+        setFormData(prev => ({ ...prev, endpoint_ids: data.endpoint_ids }));
+        setGroups(data.groups);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
+        // serialize description + groups + logo
+        const finalDescription = stringifyStatusPageConfig(descriptionText, groups, logoUrl);
+        const finalData = { ...formData, description: finalDescription };
+
         try {
             if (initialData?.id) {
                 // Update
-                const result = await updateStatusPage(initialData.id, formData);
+                const result = await updateStatusPage(initialData.id, finalData);
                 if (result.success) {
                     toast.success("Status page updated");
                     router.push("/protected/status-pages");
@@ -73,7 +94,7 @@ export function StatusPageForm({
                 }
             } else {
                 // Create
-                const result = await createStatusPage(formData);
+                const result = await createStatusPage(finalData);
                 if (result.success) {
                     toast.success("Status page created");
                     router.push("/protected/status-pages");
@@ -87,17 +108,6 @@ export function StatusPageForm({
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const toggleEndpoint = (endpointId: string) => {
-        setFormData(prev => {
-            const currentIds = prev.endpoint_ids;
-            if (currentIds.includes(endpointId)) {
-                return { ...prev, endpoint_ids: currentIds.filter(id => id !== endpointId) };
-            } else {
-                return { ...prev, endpoint_ids: [...currentIds, endpointId] };
-            }
-        });
     };
 
     return (
@@ -129,11 +139,22 @@ export function StatusPageForm({
                 </div>
 
                 <div className="grid gap-2">
+                    <Label htmlFor="logoUrl">Logo URL (Optional)</Label>
+                    <Input
+                        id="logoUrl"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                    />
+                    <p className="text-[10px] text-muted-foreground">URL to your logo image. Will replace the default logo and favicon.</p>
+                </div>
+
+                <div className="grid gap-2">
                     <Label htmlFor="description">Description (Optional)</Label>
                     <Textarea
                         id="description"
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        value={descriptionText}
+                        onChange={(e) => setDescriptionText(e.target.value)}
                         placeholder="System status and operational updates."
                     />
                 </div>
@@ -148,29 +169,12 @@ export function StatusPageForm({
                 </div>
             </div>
 
-            <div className="space-y-4">
-                <h3 className="text-lg font-medium">Included Endpoints</h3>
-                <Card>
-                    <CardContent className="p-4 grid gap-4 max-h-60 overflow-y-auto">
-                        {endpoints.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">No endpoints found.</p>
-                        ) : (
-                            endpoints.map(endpoint => (
-                                <div key={endpoint.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id={`endpoint-${endpoint.id}`}
-                                        checked={formData.endpoint_ids.includes(endpoint.id)}
-                                        onCheckedChange={() => toggleEndpoint(endpoint.id)}
-                                    />
-                                    <Label htmlFor={`endpoint-${endpoint.id}`} className="cursor-pointer">
-                                        {endpoint.name} <span className="text-muted-foreground text-xs">({endpoint.url})</span>
-                                    </Label>
-                                </div>
-                            ))
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+            <GroupEditor
+                allEndpoints={endpoints}
+                initialGroups={groups}
+                initialSelectedEndpointIds={formData.endpoint_ids}
+                onChange={handleGroupEditorChange}
+            />
 
             <div className="flex gap-4">
                 <Button type="submit" disabled={isSubmitting}>

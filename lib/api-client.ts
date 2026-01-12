@@ -159,7 +159,8 @@ export class WorkerAPI {
     }
 
     static async getPublicStatusPage(slug: string) {
-        return this.request<any>(`/api/status-pages/public/${slug}`, {}, false);
+        // Request higher limit to ensure we get enough history (speculative fix for missing data)
+        return this.request<any>(`/api/status-pages/public/${slug}?limit=10000`, {}, false);
     }
 
     static async updateStatusPage(id: string, data: any) {

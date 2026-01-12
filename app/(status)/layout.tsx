@@ -18,7 +18,11 @@ export default function StatusLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={`${inter.variable} ${mono.variable} font-sans min-h-screen bg-background antialiased`}>
+            <head>
+                <link rel="icon" href="/logo-transparent.png" />
+            </head>
+            <body className={`${inter.variable} ${mono.variable} font-sans min-h-screen bg-background text-foreground antialiased transition-colors duration-500`}>
+                <div className="cosmic-grid" />
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="system"
