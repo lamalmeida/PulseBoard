@@ -29,7 +29,7 @@ A real-time endpoint monitoring dashboard built with Next.js and Supabase. Pulse
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/pulseboard.git
+   git clone https://github.com/lamalmeida/PulseBoard.git
    cd pulseboard
    ```
 
@@ -42,9 +42,7 @@ A real-time endpoint monitoring dashboard built with Next.js and Supabase. Pulse
    Copy `.env.example` to `.env.local` and update the values:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   RESEND_API_KEY=your-resend-api-key
-   QSTASH_TOKEN=your-qstash-token
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-or-anon-key
    ```
 
 4. **Start the development server**
@@ -116,10 +114,6 @@ pulseboard/
 2. Import the repository to Vercel
 3. Add your environment variables
 4. Deploy!
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
